@@ -1,15 +1,11 @@
-sources = $(wildcard *.cpp)
-headers = $(wildcard *.h)
+sources = $(wildcard source/*.cpp)
+headers = $(wildcard source/*.h)
 objects = $(sources:%.cpp=%.o)
 deps = $(sources:%.cpp=%.d)
 CFLAGS += -g -pedantic -Wall
 CXXFLAGS += -g -pedantic -Wall -std=c++0x
 
-#Uncomment this line  to get a boatload of debug output.
-#CPPFLAGS = -DSHOW_NETWORK
-#override CPPFLAGS += -DSHOW_WARNINGS
-
-override CPPFLAGS += -Isexp
+override CPPFLAGS += -Isource/sexp
 
 all: client
 
@@ -24,15 +20,15 @@ libclient_%.o: %.cpp *$(headers)
 
 clean:
 	rm -f $(objects) client libclient_network.o libclient_game.o libclient_getters.o libclient_util.o libclient.so
-	$(MAKE) -C sexp clean
+	$(MAKE) -C source/sexp clean
 
-client: $(objects) sexp/sexp.a
+client: $(objects) source/sexp/sexp.a
 	$(CXX) $(LDFLAGS) $(LOADLIBES) $(LDLIBS) $^ -g -o client
 
-libclient.so: libclient_network.o libclient_game.o libclient_getters.o libclient_util.o sexp/libclient_sexp.a
+libclient.so: libclient_network.o libclient_game.o libclient_getters.o libclient_util.o source/sexp/libclient_sexp.a
 	$(CXX) -shared -Wl,-soname,libclient.so $(LDFLAGS) $(LOADLIBES) $(LDLIBS) $^ -o libclient.so
 
-sexp/sexp.a sexp/libclient_sexp.a:
+source/sexp/sexp.a source/sexp/libclient_sexp.a:
 	$(MAKE) -C $(dir $@) $(notdir $@)
 
 -include $(deps)
