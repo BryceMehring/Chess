@@ -1,7 +1,6 @@
 //Copyright (C) 2009 - Missouri S&T ACM AI Team
 //Please do not modify this file while building your AI
 //See AI.h & AI.cpp for that
-#pragma warning(disable : 4996)
 
 #include <string>
 #include <cstring>
@@ -284,7 +283,7 @@ DLLEXPORT int networkLoop(Connection* c)
 {
   while(true)
   {
-    sexp_t* base, *expression, *sub, *subsub;
+    sexp_t* base, *expression, *sub;
 
     char* message = rec_string(c->socket);
     string text = message;

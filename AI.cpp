@@ -25,14 +25,14 @@ bool AI::run()
 {
   // Print out the current board state
   cout<<"+---+---+---+---+---+---+---+---+"<<endl;
-  for(size_t rank=8; rank>0; rank--)
+  for(int rank=8; rank>0; rank--)
   {
     cout<<"|";
-    for(size_t file=1; file<=8; file++)
+    for(int file=1; file<=8; file++)
     {
       bool found = false;
       // Loops through all of the pieces
-      for(size_t p=0; !found && p<pieces.size(); p++)
+      for(unsigned int p=0; !found && p<pieces.size(); p++)
       {
         // determines if that piece is at the current rank and file
         if(pieces[p].rank() == rank && pieces[p].file() == file)
@@ -61,7 +61,7 @@ bool AI::run()
   }
 
   // Looks through information about the players
-  for(size_t p=0; p<players.size(); p++)
+  for(unsigned int p=0; p<players.size(); p++)
   {
     cout<<players[p].playerName();
     // if playerID is 0, you're white, if its 1, you're black

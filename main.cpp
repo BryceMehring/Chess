@@ -24,7 +24,6 @@ int main(int argc, char** argv)
   Connection* c;
   c = createConnection();
   AI ai(c);
-  int gameNumber;
   if(!serverConnect(c, argv[1], "19000"))
   {
     cerr << "Unable to connect to server" << endl;
@@ -37,7 +36,7 @@ int main(int argc, char** argv)
 
   if(argc < 3)
   {
-    gameNumber = createGame(c);
+    createGame(c);
   }
   else
   {

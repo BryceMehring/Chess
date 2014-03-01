@@ -2,8 +2,8 @@ sources = $(wildcard *.cpp)
 headers = $(wildcard *.h)
 objects = $(sources:%.cpp=%.o)
 deps = $(sources:%.cpp=%.d)
-CFLAGS += -g
-CXXFLAGS += -g
+CFLAGS += -g -pedantic -Wall
+CXXFLAGS += -g -pedantic -Wall -std=c++0x
 
 #Uncomment this line  to get a boatload of debug output.
 #CPPFLAGS = -DSHOW_NETWORK
