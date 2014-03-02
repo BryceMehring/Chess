@@ -182,27 +182,42 @@ std::vector<vec2> AI::GetPieceMoves(const Piece* pPiece)
 {
 	std::vector<vec2> pieceMoves;
 
-	// Pawn movement
-	cout << pPiece->owner() << endl;
-	assert(pPiece->owner() == playerID());
-
-	int iNewRank = pPiece->rank() + ((playerID() == 0) ? 1 : -1);
-	if(IsOnGrid(iNewRank))
+	if(pPiece->type() == int('P'))
 	{
-		// First check if we can move to the tile in front of us
-		if(IsTileEmpty(pPiece->file(),iNewRank))
-		{
-			pieceMoves.push_back({pPiece->file(), iNewRank});
-		}
+		// Pawn movement
+		cout << pPiece->owner() << endl;
+		assert(pPiece->owner() == playerID());
 
-		// Check if we can capture a piece by moving to a forward diaganol tile
-		for(int iNewFile : {pPiece->file() + 1, pPiece->file() - 1})
+		int iNewRank = pPiece->rank() + ((playerID() == 0) ? 1 : -1);
+		if(IsOnGrid(iNewRank))
 		{
-			if(IsOnGrid(iNewFile))
+			// First check if we can move to the tile in front of us
+			if(IsTileEmpty(pPiece->file(),iNewRank))
 			{
-				if(!IsTileEmpty(iNewFile,iNewRank) && !IsTileOwner(iNewFile, iNewRank))
+				pieceMoves.push_back({pPiece->file(), iNewRank});
+
+				// Check if we can move 2 tiles if this is the first move
+				if(!pPiece->hasMoved())
 				{
-					pieceMoves.push_back({iNewFile, iNewRank});
+					int iDoubleMoveRank = iNewRank + ((playerID() == 0) ? 1 : -1);
+
+					// First check if we can move to the tile in front of us
+					if(IsTileEmpty(pPiece->file(),iDoubleMoveRank))
+					{
+						pieceMoves.push_back({pPiece->file(), iDoubleMoveRank});
+					}
+				}
+			}
+
+			// Check if we can capture a piece by moving to a forward diaganol tile
+			for(int iNewFile : {pPiece->file() + 1, pPiece->file() - 1})
+			{
+				if(IsOnGrid(iNewFile))
+				{
+					if(!IsTileEmpty(iNewFile,iNewRank) && !IsTileOwner(iNewFile, iNewRank))
+					{
+						pieceMoves.push_back({iNewFile, iNewRank});
+					}
 				}
 			}
 		}
