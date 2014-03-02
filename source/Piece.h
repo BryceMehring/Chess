@@ -15,24 +15,23 @@ class Piece {
 
   // Accessors
   ///Unique Identifier
-  int id();
+  int id() const;
   ///The owner of the piece
-  int owner();
+  int owner() const;
   ///The letter this piece is at (1-8)
-  int file();
+  int file() const;
   ///The number this piece is at (1-8)
-  int rank();
+  int rank() const;
   ///1=has moved, 0=has not moved
-  int hasMoved();
+  int hasMoved() const;
   ///The letter that describes this piece's type. K=King, Q=Queen, B=Bishop, N=Knight, R=Rook, P=Pawn
-  int type();
+  int type() const;
 
   // Actions
   ///
   int move(int file, int rank, int type);
 
   // Properties
-
 
   friend std::ostream& operator<<(std::ostream& stream, Piece ob);
 };

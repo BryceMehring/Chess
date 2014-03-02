@@ -5,19 +5,22 @@
 #include "BaseAI.h"
 #include "game.h"
 
-int BaseAI::turnNumber()
+BaseAI::BaseAI(Connection* conn) : c(conn) {}
+BaseAI::~BaseAI() {}
+
+int BaseAI::turnNumber() const
 {
   return getTurnNumber(c);
 }
-int BaseAI::playerID()
+int BaseAI::playerID() const
 {
   return getPlayerID(c);
 }
-int BaseAI::gameNumber()
+int BaseAI::gameNumber() const
 {
   return getGameNumber(c);
 }
-int BaseAI::TurnsToStalemate()
+int BaseAI::TurnsToStalemate() const
 {
   return getTurnsToStalemate(c);
 }
@@ -57,6 +60,3 @@ bool BaseAI::startTurn()
   }
   return run();
 }
-
-BaseAI::BaseAI(Connection* conn) : c(conn) {}
-BaseAI::~BaseAI() {}

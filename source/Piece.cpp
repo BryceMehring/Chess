@@ -9,32 +9,32 @@ Piece::Piece(_Piece* pointer)
     ptr = (void*) pointer;
 }
 
-int Piece::id()
+int Piece::id() const
 {
   return ((_Piece*)ptr)->id;
 }
 
-int Piece::owner()
+int Piece::owner() const
 {
   return ((_Piece*)ptr)->owner;
 }
 
-int Piece::file()
+int Piece::file() const
 {
   return ((_Piece*)ptr)->file;
 }
 
-int Piece::rank()
+int Piece::rank() const
 {
   return ((_Piece*)ptr)->rank;
 }
 
-int Piece::hasMoved()
+int Piece::hasMoved() const
 {
   return ((_Piece*)ptr)->hasMoved;
 }
 
-int Piece::type()
+int Piece::type() const
 {
   return ((_Piece*)ptr)->type;
 }

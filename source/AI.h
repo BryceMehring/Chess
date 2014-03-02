@@ -16,6 +16,10 @@ public:
   virtual void init();
   virtual bool run();
   virtual void end();
+
+private:
+
+  std::vector<int> GetUserPieces() const;
 };
 
 #endif
