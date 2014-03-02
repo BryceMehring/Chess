@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <unordered_map>
 
 AI::AI(Connection* conn) : BaseAI(conn) {}
 
@@ -43,14 +42,17 @@ bool AI::run()
 		cout<<"Last Move Was: "<<endl<<moves[0]<<endl;
 	}
 
-	std::vector<int> userPieces = GetUserPieces('P');
+	std::unordered_map<int,Piece*> userPieces = GetUserPieces('P');
 
 	if(!userPieces.empty())
 	{
 		std::uniform_int_distribution<int> distribution(0,userPieces.size() - 1);
 		unsigned int iRandomPiece = distribution(m_generator);
 
-		std::vector<vec2> moves = GetPieceMoves(userPieces[iRandomPiece]);
+		auto iter = userPieces.begin();
+		std::advance(iter,iRandomPiece);
+
+		std::vector<vec2> moves = GetPieceMoves(iter->second);
 
 		if(!moves.empty())
 		{
@@ -58,7 +60,7 @@ bool AI::run()
 			unsigned int iRandomMove = distribution(m_generator);
 
 			// file, rank
-			pieces[userPieces[iRandomPiece]].move(moves[iRandomMove].x, moves[iRandomMove].y, int('Q'));
+			iter->second->move(moves[iRandomMove].x, moves[iRandomMove].y, int('Q'));
 		}
 	}
 
@@ -116,12 +118,12 @@ void AI::BuildGrid()
 {
 	ClearGrid();
 
-	for(const Piece& p : pieces)
+	for(Piece& p : pieces)
 	{
 		assert(p.file() <= 8 && p.file() >= 1);
 		assert(p.rank() <= 8 && p.rank() >= 1);
 
-		m_grid[p.file() - 1][p.rank() - 1] = p.id() - 2;
+		m_grid[p.file() - 1][p.rank() - 1] = &p;
 	}
 }
 
@@ -129,98 +131,82 @@ void AI::ClearGrid()
 {
 	for(auto& fileIter : m_grid)
 	{
-		for(int& rankIter : fileIter)
+		for(Piece*& rankIter : fileIter)
 		{
-			rankIter = -1;
+			rankIter = nullptr;
 		}
 	}
 }
 
+bool AI::IsOnGrid(int coord) const
+{
+	return (coord <= 8 && coord >= 1);
+}
+
 bool AI::IsTileEmpty(int file, int rank) const
 {
-	assert(file <= 8 && file >= 1);
-	assert(rank <= 8 && rank >= 1);
+	assert(IsOnGrid(file) && IsOnGrid(rank));
 
-	return m_grid[file - 1][rank - 1] == -1;
+	return m_grid[file - 1][rank - 1] == nullptr;
 }
 
 bool AI::IsTileOwner(int file, int rank) const
 {
-	assert(file <= 8 && file >= 1);
-	assert(rank <= 8 && rank >= 1);
+	assert(IsOnGrid(file) && IsOnGrid(rank));
 
 	if(IsTileEmpty(file,rank))
 		return false;
 
-	return (playerID() == pieces[m_grid[file - 1][rank - 1]].owner());
+	return (playerID() == m_grid[file - 1][rank - 1]->owner());
 }
 
-std::vector<int> AI::GetUserPieces(char type) const
+std::unordered_map<int,Piece*> AI::GetUserPieces(char type)
 {
-	std::vector<int> userPieces;
+	std::unordered_map<int,Piece*> userPieces;
 
 	int iPlayerID = playerID();
 
-	for(const Piece& p : pieces)
+	for(Piece& p : pieces)
 	{
 		if((iPlayerID == p.owner()) && (p.type() == int(type)))
 		{
-			userPieces.push_back(p.id() - 2);
+			userPieces.insert({p.id(),&p});
 		}
 	}
 
 	return userPieces;
 }
 
-std::vector<vec2> AI::GetPieceMoves(int index) const
+
+std::vector<vec2> AI::GetPieceMoves(const Piece* pPiece)
 {
 	std::vector<vec2> pieceMoves;
 
 	// Pawn movement
-	const Piece& piece = pieces[index];
-	cout << piece.owner() << endl;
-	assert(piece.owner() == playerID());
+	cout << pPiece->owner() << endl;
+	assert(pPiece->owner() == playerID());
 
-	int iNewRank = piece.rank() + ((playerID() == 0) ? 1 : -1);
-	if(iNewRank <= 8 && iNewRank >= 1)
+	int iNewRank = pPiece->rank() + ((playerID() == 0) ? 1 : -1);
+	if(IsOnGrid(iNewRank))
 	{
 		// First check if we can move to the tile in front of us
-		if(IsTileEmpty(piece.file(),iNewRank))
+		if(IsTileEmpty(pPiece->file(),iNewRank))
 		{
-			pieceMoves.push_back({piece.file(), iNewRank});
+			pieceMoves.push_back({pPiece->file(), iNewRank});
 		}
 
-		int iNewFile = piece.file() + 1;
-		if(iNewFile <= 8 && iNewFile >= 1)
+		// Check if we can capture a piece by moving to a forward diaganol tile
+		for(int iNewFile : {pPiece->file() + 1, pPiece->file() - 1})
 		{
-			if(!IsTileEmpty(iNewFile,iNewRank) && !IsTileOwner(iNewFile, iNewRank))
+			if(IsOnGrid(iNewFile))
 			{
-				pieceMoves.push_back({iNewFile, iNewRank});
-			}
-		}
-
-		iNewFile = piece.file() - 1;
-		if(iNewFile <= 8 && iNewFile >= 1)
-		{
-			if(!IsTileEmpty(iNewFile,iNewRank) && !IsTileOwner(iNewFile, iNewRank))
-			{
-				pieceMoves.push_back({iNewFile, iNewRank});
+				if(!IsTileEmpty(iNewFile,iNewRank) && !IsTileOwner(iNewFile, iNewRank))
+				{
+					pieceMoves.push_back({iNewFile, iNewRank});
+				}
 			}
 		}
 	}
 
-	// Check if we can capture a piece by moving to a forward diaganol tile
-
 	return pieceMoves;
 }
-
-
-
-
-
-
-
-
-
-
-

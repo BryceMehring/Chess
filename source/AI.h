@@ -4,6 +4,7 @@
 #include "BaseAI.h"
 #include <iostream>
 #include <random>
+#include <unordered_map>
 
 using namespace std;
 
@@ -30,14 +31,15 @@ private:
 
   void BuildGrid();
   void ClearGrid();
+  bool IsOnGrid(int coord) const;
   bool IsTileEmpty(int file, int rank) const;
   bool IsTileOwner(int file, int rank) const;
 
   // todo: replace this with a hash table of some sort
-  std::vector<int> GetUserPieces(char type) const;
-  std::vector<vec2> GetPieceMoves(int index) const;
+  std::unordered_map<int,Piece*> GetUserPieces(char type);
+  std::vector<vec2> GetPieceMoves(const Piece* pPiece);
 
-  std::vector<std::vector<int>> m_grid;
+  std::vector<std::vector<Piece*>> m_grid;
   std::default_random_engine m_generator;
 };
 
