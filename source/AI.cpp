@@ -27,6 +27,7 @@ void AI::init()
 	}
 
 	m_generator.seed(time(0));
+	srand(time(0));
 }
 
 //This function is called each time it is your turn.
@@ -42,7 +43,9 @@ bool AI::run()
 		cout<<"Last Move Was: "<<endl<<moves[0]<<endl;
 	}
 
-	std::unordered_map<int,Piece*> userPieces = GetUserPieces('P');
+	unsigned int piece = rand() % 2;
+
+	std::unordered_map<int,Piece*> userPieces = GetUserPieces(piece == 0 ? 'P' : 'N');
 
 	if(!userPieces.empty())
 	{
@@ -219,6 +222,25 @@ std::vector<vec2> AI::GetPieceMoves(const Piece* pPiece)
 						pieceMoves.push_back({iNewFile, iNewRank});
 					}
 				}
+			}
+		}
+	}
+	else if(pPiece->type() == int('N'))
+	{
+		int x = pPiece->file();
+		int y = pPiece->rank();
+
+		const vec2 knightMoves[] =
+		{
+			{x + 1, y + 2}, {x + 2, y + 1}, {x - 2, y + 1}, {x - 1, y + 2},
+			{x + 1, y - 2}, {x + 2, y - 1}, {x - 2, y - 1}, {x - 1, y - 2},
+		};
+
+		for(const vec2& move : knightMoves)
+		{
+			if(IsOnGrid(move.x) && IsOnGrid(move.y) && !IsTileOwner(move.x,move.y))
+			{
+				pieceMoves.push_back(move);
 			}
 		}
 	}
