@@ -6,8 +6,6 @@
 #include <random>
 #include <unordered_map>
 
-using namespace std;
-
 struct vec2
 {
 	int x; // rank

@@ -4,6 +4,9 @@
 #include <algorithm>
 #include <cassert>
 
+using std::cout;
+using std::endl;
+
 AI::AI(Connection* conn) : BaseAI(conn) {}
 
 const char* AI::username()
@@ -43,12 +46,12 @@ bool AI::run()
 		cout<<"Last Move Was: "<<endl<<moves[0]<<endl;
 	}
 
-	const char PIECES_TO_MOVE[] = {'B','N','P'};
+	const char PIECES_TO_MOVE[] = {'B','N','P','R'};
 
 	std::vector<vec2> moves;
 	do
 	{
-		std::unordered_map<int,Piece*> userPieces = GetUserPieces(PIECES_TO_MOVE[rand() % 3]);
+		std::unordered_map<int,Piece*> userPieces = GetUserPieces(PIECES_TO_MOVE[rand() % 4]);
 		if(!userPieces.empty())
 		{
 
@@ -249,31 +252,46 @@ std::vector<vec2> AI::GetPieceMoves(const Piece* pPiece)
 			}
 		}
 	}
-	else if(pPiece->type() == int('B'))
+	else if(pPiece->type() == int('B') || pPiece->type() == int('R'))
 	{
-		for(int i : {1, -1})
+		const vec2 dir[][4] =
 		{
-			for(int j : {1, -1})
 			{
-				int x = pPiece->file();
-				int y = pPiece->rank();
+				{1,1},
+				{-1,1},
+				{1,-1},
+				{-1,-1},
+			},
+			{
+				{1,0},
+				{-1,0},
+				{0,1},
+				{0,-1},
+			},
+		};
 
-				while(IsOnGrid(x) && IsOnGrid(y))
+		unsigned int index = pPiece->type() == int('B') ? 0 : 1;
+
+		for(const vec2& d : dir[index])
+		{
+			int x = pPiece->file();
+			int y = pPiece->rank();
+
+			while(IsOnGrid(x) && IsOnGrid(y))
+			{
+				x += d.x;
+				y += d.y;
+
+				if(IsOnGrid(x) && IsOnGrid(y))
 				{
-					x += i;
-					y += j;
-
-					if(IsOnGrid(x) && IsOnGrid(y))
+					if(!IsTileOwner(x,y))
 					{
-						if(!IsTileOwner(x,y))
-						{
-							pieceMoves.push_back({x,y});
-						}
+						pieceMoves.push_back({x,y});
+					}
 
-						if(!IsTileEmpty(x,y))
-						{
-							break;
-						}
+					if(!IsTileEmpty(x,y))
+					{
+						break;
 					}
 				}
 			}
