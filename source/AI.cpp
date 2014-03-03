@@ -43,29 +43,34 @@ bool AI::run()
 		cout<<"Last Move Was: "<<endl<<moves[0]<<endl;
 	}
 
-	unsigned int piece = rand() % 2;
+	const char PIECES_TO_MOVE[] = {'B','N','P'};
 
-	std::unordered_map<int,Piece*> userPieces = GetUserPieces(piece == 0 ? 'P' : 'N');
-
-	if(!userPieces.empty())
+	std::vector<vec2> moves;
+	do
 	{
-		std::uniform_int_distribution<int> distribution(0,userPieces.size() - 1);
-		unsigned int iRandomPiece = distribution(m_generator);
-
-		auto iter = userPieces.begin();
-		std::advance(iter,iRandomPiece);
-
-		std::vector<vec2> moves = GetPieceMoves(iter->second);
-
-		if(!moves.empty())
+		std::unordered_map<int,Piece*> userPieces = GetUserPieces(PIECES_TO_MOVE[rand() % 3]);
+		if(!userPieces.empty())
 		{
-			distribution = std::uniform_int_distribution<int>(0,moves.size() - 1);
-			unsigned int iRandomMove = distribution(m_generator);
 
-			// file, rank
-			iter->second->move(moves[iRandomMove].x, moves[iRandomMove].y, int('Q'));
+			std::uniform_int_distribution<int> distribution(0,userPieces.size() - 1);
+			unsigned int iRandomPiece = distribution(m_generator);
+
+			auto iter = userPieces.begin();
+			std::advance(iter,iRandomPiece);
+
+			moves = GetPieceMoves(iter->second);
+
+			if(!moves.empty())
+			{
+				distribution = std::uniform_int_distribution<int>(0,moves.size() - 1);
+				unsigned int iRandomMove = distribution(m_generator);
+
+				// file, rank
+				iter->second->move(moves[iRandomMove].x, moves[iRandomMove].y, int('Q'));
+			}
 		}
-	}
+
+	} while(moves.empty());
 
 	return true;
 }
@@ -241,6 +246,36 @@ std::vector<vec2> AI::GetPieceMoves(const Piece* pPiece)
 			if(IsOnGrid(move.x) && IsOnGrid(move.y) && !IsTileOwner(move.x,move.y))
 			{
 				pieceMoves.push_back(move);
+			}
+		}
+	}
+	else if(pPiece->type() == int('B'))
+	{
+		for(int i : {1, -1})
+		{
+			for(int j : {1, -1})
+			{
+				int x = pPiece->file();
+				int y = pPiece->rank();
+
+				while(IsOnGrid(x) && IsOnGrid(y))
+				{
+					x += i;
+					y += j;
+
+					if(IsOnGrid(x) && IsOnGrid(y))
+					{
+						if(!IsTileOwner(x,y))
+						{
+							pieceMoves.push_back({x,y});
+						}
+
+						if(!IsTileEmpty(x,y))
+						{
+							break;
+						}
+					}
+				}
 			}
 		}
 	}
