@@ -46,12 +46,12 @@ bool AI::run()
 		cout<<"Last Move Was: "<<endl<<moves[0]<<endl;
 	}
 
-	const char PIECES_TO_MOVE[] = {'B','N','P','R'};
+	const char PIECES_TO_MOVE[] = {'B','N','P','R','Q'};
 
 	std::vector<vec2> moves;
 	do
 	{
-		std::unordered_map<int,Piece*> userPieces = GetUserPieces(PIECES_TO_MOVE[rand() % 4]);
+		std::unordered_map<int,Piece*> userPieces = GetUserPieces(PIECES_TO_MOVE[rand() % 5]);
 		if(!userPieces.empty())
 		{
 
@@ -252,35 +252,44 @@ std::vector<vec2> AI::GetPieceMoves(const Piece* pPiece)
 			}
 		}
 	}
-	else if(pPiece->type() == int('B') || pPiece->type() == int('R'))
+	else if(pPiece->type() == int('B') || pPiece->type() == int('R') || pPiece->type() == int('Q'))
 	{
-		const vec2 dir[][4] =
+		const vec2 dir[] =
 		{
-			{
-				{1,1},
-				{-1,1},
-				{1,-1},
-				{-1,-1},
-			},
-			{
-				{1,0},
-				{-1,0},
-				{0,1},
-				{0,-1},
-			},
+			// Bishop
+			{1,1},
+			{-1,1},
+			{1,-1},
+			{-1,-1},
+			
+			// Rook
+			{1,0}, 
+			{-1,0},
+			{0,1},
+			{0,-1}
 		};
+		
+		unsigned int start = 0;
+		unsigned int count = 4;
+		
+		if(pPiece->type() == int('R'))
+		{
+			start = 4;
+		}
+		else if(pPiece->type() == int('Q'))
+		{
+			count *= 2;
+		}
 
-		unsigned int index = pPiece->type() == int('B') ? 0 : 1;
-
-		for(const vec2& d : dir[index])
+		for(unsigned int i = start; i < count; ++i)
 		{
 			int x = pPiece->file();
 			int y = pPiece->rank();
 
 			while(IsOnGrid(x) && IsOnGrid(y))
 			{
-				x += d.x;
-				y += d.y;
+				x += dir[i].x;
+				y += dir[i].y;
 
 				if(IsOnGrid(x) && IsOnGrid(y))
 				{
