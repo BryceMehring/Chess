@@ -2,15 +2,9 @@
 #define AI_H
 
 #include "BaseAI.h"
+#include "Board.h"
 #include <iostream>
 #include <random>
-#include <unordered_map>
-
-struct vec2
-{
-	int x; // rank
-	int y; // file
-};
 
 ///The class implementing gameplay logic.
 class AI: public BaseAI
@@ -27,18 +21,8 @@ private:
 
   void DrawBoard() const;
 
-  void BuildGrid();
-  void ClearGrid();
-  bool IsOnGrid(int coord) const;
-  bool IsTileEmpty(int file, int rank) const;
-  bool IsTileOwner(int file, int rank) const;
-
-  // todo: replace this with a hash table of some sort
-  std::unordered_map<int,Piece*> GetUserPieces(char type);
-  std::vector<vec2> GetPieceMoves(const Piece* pPiece);
-
-  std::vector<std::vector<Piece*>> m_grid;
-  std::default_random_engine m_generator;
+  Board m_board;
+  std::random_device m_generator;
 };
 
 #endif
