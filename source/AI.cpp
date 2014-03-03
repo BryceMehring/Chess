@@ -46,12 +46,12 @@ bool AI::run()
 		cout<<"Last Move Was: "<<endl<<moves[0]<<endl;
 	}
 
-	const char PIECES_TO_MOVE[] = {'B','N','P','R','Q'};
+	const char PIECES_TO_MOVE[] = {'B','N','P','R','Q','K'};
 
 	std::vector<vec2> moves;
 	do
 	{
-		std::unordered_map<int,Piece*> userPieces = GetUserPieces(PIECES_TO_MOVE[rand() % 5]);
+		std::unordered_map<int,Piece*> userPieces = GetUserPieces(PIECES_TO_MOVE[rand() % 6]);
 		if(!userPieces.empty())
 		{
 
@@ -233,18 +233,28 @@ std::vector<vec2> AI::GetPieceMoves(const Piece* pPiece)
 			}
 		}
 	}
-	else if(pPiece->type() == int('N'))
+	else if(pPiece->type() == int('N') || pPiece->type() == int('K'))
 	{
 		int x = pPiece->file();
 		int y = pPiece->rank();
 
-		const vec2 knightMoves[] =
+		const vec2 currentMoves[][8] =
 		{
-			{x + 1, y + 2}, {x + 2, y + 1}, {x - 2, y + 1}, {x - 1, y + 2},
-			{x + 1, y - 2}, {x + 2, y - 1}, {x - 2, y - 1}, {x - 1, y - 2},
+			// Knight
+			{
+				{x + 1, y + 2}, {x + 2, y + 1}, {x - 2, y + 1}, {x - 1, y + 2},
+				{x + 1, y - 2}, {x + 2, y - 1}, {x - 2, y - 1}, {x - 1, y - 2}
+			},
+			// King
+			{
+				{x - 1, y - 1}, {x,y - 1}, {x + 1,y - 1}, {x - 1, y},
+				{x + 1, y}, {x - 1, y + 1}, {x, y + 1}, {x + 1,y + 1}
+			}
 		};
 
-		for(const vec2& move : knightMoves)
+		unsigned int index = pPiece->type() == int('K') ? 1 : 0;
+
+		for(const vec2& move : currentMoves[index])
 		{
 			if(IsOnGrid(move.x) && IsOnGrid(move.y) && !IsTileOwner(move.x,move.y))
 			{
