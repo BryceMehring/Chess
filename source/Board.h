@@ -21,9 +21,28 @@ struct BoardMove
 	vec2 move;
 };
 
+class ApplyMove
+{
+public:
+
+	ApplyMove(const BoardMove* pMove, class Board* pBoard);
+	~ApplyMove();
+
+private:
+
+	const BoardMove* m_pMove;
+	Board* m_pBoard;
+
+	vec2 m_oldKingPos;
+	Piece* m_pOldDest;
+
+};
+
 class Board
 {
 public:
+
+	friend class ApplyMove;
 
 	// Constructs an empty board
 	Board();
