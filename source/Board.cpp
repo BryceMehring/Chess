@@ -6,7 +6,7 @@
 
 using namespace std;
 
-Board::Board() : m_kingPos{0,0}, m_iPlayerID(0)
+Board::Board() : m_iPlayerID(0)
 {
 	m_board.resize(8);
 
