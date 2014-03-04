@@ -246,14 +246,14 @@ bool Board::IsOnBoard(const vec2& coord) const
 
 bool Board::IsTileEmpty(int file, int rank) const
 {
-	assert(IsOnGrid(file) && IsOnGrid(rank));
+	assert(IsOnBoard(file) && IsOnBoard(rank));
 
 	return m_board[file - 1][rank - 1] == nullptr;
 }
 
 bool Board::IsTileOwner(int file, int rank) const
 {
-	assert(IsOnGrid(file) && IsOnGrid(rank));
+	assert(IsOnBoard(file) && IsOnBoard(rank));
 
 	if(IsTileEmpty(file,rank))
 		return false;
