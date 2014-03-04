@@ -22,29 +22,48 @@ class Board
 {
 public:
 
+	// Constructs an empty board
 	Board();
 
-	void Update(int playerID, std::vector<Piece>& pieces);
-
-	std::vector<BoardMove> GetMoves() const;
+	// Updates the grid and returns all valid moves
+	std::vector<BoardMove> Update(int playerID, std::vector<Piece>& pieces);
 
 private:
 
-	void GeneratePawnMoves(Piece* pPiece, std::vector<BoardMove>& moves) const;
-	void GenerateDirectionMoves(Piece* pPiece, std::vector<BoardMove>& moves) const;
-	void GenerateDiscreteMoves(Piece* pPiece, std::vector<BoardMove>& moves) const;
+	std::vector<BoardMove> GetMoves(bool bCheck = true);
 
-	bool IsOnGrid(int coord) const;
+	// Generate valid moves for pawns
+	void GeneratePawnMoves(Piece* pPiece, bool bCheck, std::vector<BoardMove>& moves);
 
+	// Generates valid moves for bishops rooks and queens
+	void GenerateDirectionMoves(Piece* pPiece, bool bCheck, std::vector<BoardMove>& moves);
+
+	// Generates valid moves for knights and kings
+	void GenerateDiscreteMoves(Piece* pPiece, bool bCheck, std::vector<BoardMove>& moves);
+
+	void AddMove(const BoardMove& move, bool bCheck, std::vector<BoardMove>& moves);
+
+	// Returns true if pos is on the board
+	bool IsOnBoard(int pos) const;
+
+	// Returns true if pos is on the board
+	bool IsOnBoard(const vec2& pos) const;
+
+	// Returns true if the current tile is empty
 	bool IsTileEmpty(int file, int rank) const;
 
+	// Returns true if we currently own the tile
 	bool IsTileOwner(int file, int rank) const;
 
+	// Returns true if the current state of the board is in check
+	bool IsInCheck();
+
+	// Clears the board
 	void Clear();
 
 	std::vector<std::vector<Piece*>> m_board;
+	vec2 m_kingPos[2];
 	int m_iPlayerID;
-
 };
 
 #endif // _BOARD_

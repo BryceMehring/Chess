@@ -1,8 +1,12 @@
 #include "Board.h"
 #include <cassert>
 #include <algorithm>
+#include <iostream>
 
-Board::Board() : m_iPlayerID(0)
+
+using namespace std;
+
+Board::Board() : m_kingPos{0,0}, m_iPlayerID(0)
 {
 	m_board.resize(8);
 
@@ -12,21 +16,28 @@ Board::Board() : m_iPlayerID(0)
 	}
 }
 
-void Board::Update(int playerID, std::vector<Piece>& pieces)
+std::vector<BoardMove> Board::Update(int playerID, std::vector<Piece>& pieces)
 {
+	m_iPlayerID = playerID;
+
+	// Clear the old board
 	Clear();
+
+	// Fill new board with pieces
 	for(Piece& p : pieces)
 	{
-		assert(p.file() <= 8 && p.file() >= 1);
-		assert(p.rank() <= 8 && p.rank() >= 1);
+		if(p.type() == 'K')
+		{
+			m_kingPos[p.owner()] = {p.file(), p.rank()};
+		}
 
 		m_board[p.file() - 1][p.rank() - 1] = &p;
 	}
 
-	m_iPlayerID = playerID;
+	return GetMoves();
 }
 
-std::vector<BoardMove> Board::GetMoves() const
+std::vector<BoardMove> Board::GetMoves(bool bCheck)
 {
 	std::vector<BoardMove> moves;
 	for(auto& fileIter : m_board)
@@ -38,16 +49,16 @@ std::vector<BoardMove> Board::GetMoves() const
 				switch(piece->type())
 				{
 				case 'P':
-					GeneratePawnMoves(piece, moves);
+					GeneratePawnMoves(piece, bCheck, moves);
 					break;
 				case 'N':
 				case 'K':
-					GenerateDiscreteMoves(piece, moves);
+					GenerateDiscreteMoves(piece, bCheck, moves);
 					break;
 				case 'B':
 				case 'R':
 				case 'Q':
-					GenerateDirectionMoves(piece, moves);
+					GenerateDirectionMoves(piece, bCheck, moves);
 					break;
 				default:
 					assert("Invalid piece" && false);
@@ -59,17 +70,17 @@ std::vector<BoardMove> Board::GetMoves() const
 	return moves;
 }
 
-void Board::GeneratePawnMoves(Piece* pPiece, std::vector<BoardMove>& moves) const
+void Board::GeneratePawnMoves(Piece* pPiece, bool bCheck, std::vector<BoardMove>& moves)
 {
 	assert(pPiece->type() == int('P'));
 
 	int iNewRank = pPiece->rank() + ((m_iPlayerID == 0) ? 1 : -1);
-	if(IsOnGrid(iNewRank))
+	if(IsOnBoard(iNewRank))
 	{
 		// First check if we can move to the tile in front of us
 		if(IsTileEmpty(pPiece->file(),iNewRank))
 		{
-			moves.push_back({pPiece, {pPiece->file(), iNewRank}});
+			AddMove({pPiece, {pPiece->file(), iNewRank}}, bCheck, moves);
 
 			// Check if we can move 2 tiles if this is the first move
 			if(!pPiece->hasMoved())
@@ -79,7 +90,7 @@ void Board::GeneratePawnMoves(Piece* pPiece, std::vector<BoardMove>& moves) cons
 				// First check if we can move to the tile in front of us
 				if(IsTileEmpty(pPiece->file(),iDoubleMoveRank))
 				{
-					moves.push_back({pPiece, {pPiece->file(), iDoubleMoveRank}});
+					AddMove({pPiece, {pPiece->file(), iDoubleMoveRank}}, bCheck, moves);
 				}
 			}
 		}
@@ -87,18 +98,18 @@ void Board::GeneratePawnMoves(Piece* pPiece, std::vector<BoardMove>& moves) cons
 		// Check if we can capture a piece by moving to a forward diaganol tile
 		for(int iNewFile : {pPiece->file() + 1, pPiece->file() - 1})
 		{
-			if(IsOnGrid(iNewFile))
+			if(IsOnBoard(iNewFile))
 			{
 				if(!IsTileEmpty(iNewFile,iNewRank) && !IsTileOwner(iNewFile, iNewRank))
 				{
-					moves.push_back({pPiece, {iNewFile, iNewRank}});
+					AddMove({pPiece, {iNewFile, iNewRank}}, bCheck, moves);
 				}
 			}
 		}
 	}
 }
 
-void Board::GenerateDirectionMoves(Piece* pPiece, std::vector<BoardMove>& moves) const
+void Board::GenerateDirectionMoves(Piece* pPiece, bool bCheck, std::vector<BoardMove>& moves)
 {
 	assert(pPiece->type() == int('B') || pPiece->type() == int('R') || pPiece->type() == int('Q'));
 
@@ -131,22 +142,21 @@ void Board::GenerateDirectionMoves(Piece* pPiece, std::vector<BoardMove>& moves)
 
 	for(unsigned int i = start; i < end; ++i)
 	{
-		int x = pPiece->file();
-		int y = pPiece->rank();
+		vec2 pos = {pPiece->file(), pPiece->rank()};
 
-		while(IsOnGrid(x) && IsOnGrid(y))
+		while(IsOnBoard(pos))
 		{
-			x += dir[i].x;
-			y += dir[i].y;
+			pos.x += dir[i].x;
+			pos.y += dir[i].y;
 
-			if(IsOnGrid(x) && IsOnGrid(y))
+			if(IsOnBoard(pos))
 			{
-				if(!IsTileOwner(x,y))
+				if(!IsTileOwner(pos.x,pos.y))
 				{
-					moves.push_back({pPiece,{x,y}});
+					AddMove({pPiece, pos}, bCheck, moves);
 				}
 
-				if(!IsTileEmpty(x,y))
+				if(!IsTileEmpty(pos.x,pos.y))
 				{
 					break;
 				}
@@ -155,7 +165,7 @@ void Board::GenerateDirectionMoves(Piece* pPiece, std::vector<BoardMove>& moves)
 	}
 }
 
-void Board::GenerateDiscreteMoves(Piece* pPiece, std::vector<BoardMove>& moves) const
+void Board::GenerateDiscreteMoves(Piece* pPiece, bool bCheck, std::vector<BoardMove>& moves)
 {
 	assert(pPiece->type() == int('N') || pPiece->type() == int('K'));
 
@@ -180,16 +190,58 @@ void Board::GenerateDiscreteMoves(Piece* pPiece, std::vector<BoardMove>& moves) 
 
 	for(const vec2& move : currentMoves[index])
 	{
-		if(IsOnGrid(move.x) && IsOnGrid(move.y) && !IsTileOwner(move.x,move.y))
+		if(IsOnBoard(move) && !IsTileOwner(move.x,move.y))
 		{
-			moves.push_back({pPiece, move});
+			AddMove({pPiece, move}, bCheck, moves);
 		}
 	}
 }
 
-bool Board::IsOnGrid(int coord) const
+void Board::AddMove(const BoardMove& move, bool bCheck, std::vector<BoardMove>& moves)
+{
+	// todo: make this cleaner
+
+	int x = move.pPiece->file() - 1;
+	int y = move.pPiece->rank() - 1;
+
+	vec2 oldKingPos = m_kingPos[move.pPiece->owner()];
+
+	Piece* pOldDest = m_board[move.move.x - 1][move.move.y - 1];
+
+	m_board[x][y] = nullptr;
+	m_board[move.move.x - 1][move.move.y - 1] = move.pPiece;
+
+	if(move.pPiece->type() == 'K')
+	{
+		m_kingPos[move.pPiece->owner()] = move.move;
+	}
+
+	if(!bCheck || !IsInCheck())
+	{
+		moves.push_back(move);
+	}
+	else
+	{
+		//cout << "Did not move" << endl;
+	}
+
+	if(move.pPiece->type() == 'K')
+	{
+		m_kingPos[move.pPiece->owner()] = oldKingPos;
+	}
+
+	m_board[x][y] = move.pPiece;
+	m_board[move.move.x - 1][move.move.y - 1] = pOldDest;
+}
+
+bool Board::IsOnBoard(int coord) const
 {
 	return (coord <= 8 && coord >= 1);
+}
+
+bool Board::IsOnBoard(const vec2& coord) const
+{
+	return IsOnBoard(coord.x) && IsOnBoard(coord.y);
 }
 
 bool Board::IsTileEmpty(int file, int rank) const
@@ -207,6 +259,30 @@ bool Board::IsTileOwner(int file, int rank) const
 		return false;
 
 	return (m_iPlayerID == m_board[file - 1][rank - 1]->owner());
+}
+
+bool Board::IsInCheck()
+{
+	// todo: clean this up
+
+	int oldPlayerID = m_iPlayerID;
+
+	m_iPlayerID = !m_iPlayerID;
+	std::vector<BoardMove> moves = GetMoves(false);
+
+	bool bCheck = false;
+	for(const auto& m : moves)
+	{
+		if(m.move.x == m_kingPos[oldPlayerID].x && m.move.y == m_kingPos[oldPlayerID].y)
+		{
+			bCheck = true;
+			break;
+		}
+	}
+
+	m_iPlayerID = oldPlayerID;
+
+	return bCheck;
 }
 
 void Board::Clear()
