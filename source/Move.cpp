@@ -9,32 +9,32 @@ Move::Move(_Move* pointer)
     ptr = (void*) pointer;
 }
 
-int Move::id()
+int Move::id() const
 {
   return ((_Move*)ptr)->id;
 }
 
-int Move::fromFile()
+int Move::fromFile() const
 {
   return ((_Move*)ptr)->fromFile;
 }
 
-int Move::fromRank()
+int Move::fromRank() const
 {
   return ((_Move*)ptr)->fromRank;
 }
 
-int Move::toFile()
+int Move::toFile() const
 {
   return ((_Move*)ptr)->toFile;
 }
 
-int Move::toRank()
+int Move::toRank() const
 {
   return ((_Move*)ptr)->toRank;
 }
 
-int Move::promoteType()
+int Move::promoteType() const
 {
   return ((_Move*)ptr)->promoteType;
 }

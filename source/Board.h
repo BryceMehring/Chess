@@ -17,9 +17,19 @@ struct vec2
 
 struct BoardMove
 {
-	Piece* pPiece;
-	vec2 move;
+	vec2 from;
+	vec2 to;
 };
+
+/*struct SimpleBoardMove
+{
+	SimpleBoardMove() : type(0) {}
+	SimpleBoardMove(const vec2& from, const vec2& to, int type) : from(from), to(to), type(type) {}
+
+	vec2 from;
+	vec2 to;
+	int type;
+};*/
 
 class ApplyMove
 {
@@ -35,7 +45,7 @@ private:
 
 	vec2 m_oldKingPos;
 	Piece* m_pOldDest;
-
+	Piece* m_pMovingPiece;
 };
 
 class Board
@@ -48,7 +58,9 @@ public:
 	Board();
 
 	// Updates the grid and returns all valid moves
-	std::vector<BoardMove> Update(int playerID, std::vector<Piece>& pieces);
+	std::vector<BoardMove> Update(int playerID, const Move* pLastMove, std::vector<Piece>& pieces);
+
+	Piece* GetPiece(const vec2& pos);
 
 private:
 
@@ -78,13 +90,15 @@ private:
 	bool IsTileOwner(int file, int rank) const;
 
 	// Returns true if the current state of the board is in check
-	bool IsInCheck();
+	bool IsInCheck(const BoardMove& move);
 
 	// Clears the board
 	void Clear();
 
 	std::vector<std::vector<Piece*>> m_board;
 	vec2 m_kingPos[2];
+	BoardMove m_LastMove;
+	//SimpleBoardMove m_LastMove;
 	int m_iPlayerID;
 };
 

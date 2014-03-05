@@ -15,17 +15,17 @@ class Move {
 
   // Accessors
   ///Unique Identifier
-  int id();
+  int id() const;
   ///The initial file location
-  int fromFile();
+  int fromFile() const;
   ///The initial rank location
-  int fromRank();
+  int fromRank() const;
   ///The final file location
-  int toFile();
+  int toFile() const;
   ///The final rank location
-  int toRank();
+  int toRank() const;
   ///The type of the piece for pawn promotion. Q=Queen, B=Bishop, N=Knight, R=Rook
-  int promoteType();
+  int promoteType() const;
 
   // Actions
 

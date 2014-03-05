@@ -30,18 +30,26 @@ bool AI::run()
 {
 	DrawBoard();
 
-	std::vector<BoardMove> userMoves = m_board.Update(playerID(),pieces);
+	Move* pPreviousMove = nullptr;
+	if(!moves.empty())
+	{
+		pPreviousMove = &moves[0];
+	}
+
+	std::vector<BoardMove> userMoves = m_board.Update(playerID(), pPreviousMove, pieces);
 
 	if(!userMoves.empty())
 	{
 		std::uniform_int_distribution<unsigned int> distribution(0,userMoves.size() - 1);
 		unsigned int iRandomPiece = distribution(m_generator);
 
-		cout << *userMoves[iRandomPiece].pPiece << endl;
-		cout << "(" << userMoves[iRandomPiece].move.x <<","<<userMoves[iRandomPiece].move.y<<")"<<endl;
+		//cout << *userMoves[iRandomPiece].pPiece << endl;
+		cout << "(" << userMoves[iRandomPiece].to.x <<","<<userMoves[iRandomPiece].to.y<<")"<<endl;
 		cout << userMoves.size() << endl;
 
-		userMoves[iRandomPiece].pPiece->move(userMoves[iRandomPiece].move.x, userMoves[iRandomPiece].move.y, 'Q');
+		Piece* pPiece = m_board.GetPiece(userMoves[iRandomPiece].from);
+
+		pPiece->move(userMoves[iRandomPiece].to.x, userMoves[iRandomPiece].to.y, 'Q');
 	}
 
 	return true;
