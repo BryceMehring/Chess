@@ -21,16 +21,7 @@ struct BoardMove
 	vec2 to;
 };
 
-/*struct SimpleBoardMove
-{
-	SimpleBoardMove() : type(0) {}
-	SimpleBoardMove(const vec2& from, const vec2& to, int type) : from(from), to(to), type(type) {}
-
-	vec2 from;
-	vec2 to;
-	int type;
-};*/
-
+// Moves, then unmoves a piece move upon destruction
 class ApplyMove
 {
 public:
@@ -46,8 +37,11 @@ private:
 	vec2 m_oldKingPos;
 	Piece* m_pOldDest;
 	Piece* m_pMovingPiece;
+
+	BoardMove m_LastMove;
 };
 
+// Defines a chess board which manages generating valid action states
 class Board
 {
 public:
@@ -60,6 +54,8 @@ public:
 	// Updates the grid and returns all valid moves
 	std::vector<BoardMove> Update(int playerID, const Move* pLastMove, std::vector<Piece>& pieces);
 
+	// Returns the piece at pos
+	// If there is not a piece at pos, nullptr is returned
 	Piece* GetPiece(const vec2& pos);
 
 private:
@@ -95,10 +91,11 @@ private:
 	// Clears the board
 	void Clear();
 
+private:
+
 	std::vector<std::vector<Piece*>> m_board;
 	vec2 m_kingPos[2];
 	BoardMove m_LastMove;
-	//SimpleBoardMove m_LastMove;
 	int m_iPlayerID;
 };
 

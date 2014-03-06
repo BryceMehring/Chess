@@ -18,6 +18,9 @@ ApplyMove::ApplyMove(const BoardMove* pMove, Board* pBoard) : m_pMove(pMove), m_
 	pBoard->m_board[pMove->from.x - 1][pMove->from.y - 1] = nullptr;
 	pBoard->m_board[pMove->to.x - 1][pMove->to.y - 1] = m_pMovingPiece;
 
+	m_LastMove = pBoard->m_LastMove;
+	pBoard->m_LastMove = *pMove;
+
 	if(m_pMovingPiece->type() == 'K')
 	{
 		pBoard->m_kingPos[m_pMovingPiece->owner()] = pMove->to;
@@ -35,6 +38,8 @@ ApplyMove::~ApplyMove()
 
 	m_pBoard->m_board[m_pMove->from.x - 1][m_pMove->from.y - 1] = m_pMovingPiece;
 	m_pBoard->m_board[m_pMove->to.x - 1][m_pMove->to.y - 1] = m_pOldDest;
+
+	m_pBoard->m_LastMove = m_LastMove;
 }
 
 Board::Board() : m_iPlayerID(0)
@@ -210,7 +215,7 @@ void Board::GenerateDirectionMoves(Piece* pPiece, bool bCheck, std::vector<Board
 	{
 		vec2 pos = {pPiece->file(), pPiece->rank()};
 
-		while(IsOnBoard(pos))
+		do
 		{
 			pos.x += dir[i].x;
 			pos.y += dir[i].y;
@@ -219,15 +224,11 @@ void Board::GenerateDirectionMoves(Piece* pPiece, bool bCheck, std::vector<Board
 			{
 				if(!IsTileOwner(pos.x,pos.y))
 				{
+					// If the tile is empty or is an enemy
 					AddMove({{pPiece->file(), pPiece->rank()}, pos}, bCheck, moves);
 				}
-
-				if(!IsTileEmpty(pos.x,pos.y))
-				{
-					break;
-				}
 			}
-		}
+		} while(IsOnBoard(pos) && IsTileEmpty(pos.x,pos.y));
 	}
 }
 
@@ -302,24 +303,21 @@ bool Board::IsTileOwner(int file, int rank) const
 bool Board::IsInCheck(const BoardMove& move)
 {
 	// todo: clean this up
-
 	ApplyMove triedMove(&move, this);
 
 	int oldPlayerID = m_iPlayerID;
-	const BoardMove oldMove = m_LastMove;
-
-	m_LastMove = move;
 	m_iPlayerID = !m_iPlayerID;
 
+	// Generate moves for the other team
 	std::vector<BoardMove> moves = GetMoves(false);
 
+	// Check if any of their pieces are attacking our king
 	auto iter = std::find_if(moves.begin(),moves.end(),[&](const BoardMove& m) -> bool
 	{
 		return (m.to.x == m_kingPos[oldPlayerID].x) && (m.to.y == m_kingPos[oldPlayerID].y);
 	});
 
 	m_iPlayerID = oldPlayerID;
-	m_LastMove = oldMove;
 
 	return iter != moves.end();
 }
