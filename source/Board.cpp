@@ -157,8 +157,6 @@ void Board::GeneratePawnMoves(Piece* pPiece, bool bCheck, std::vector<BoardMove>
 
 						if(abs(fileDiff) == 1)
 						{
-							moves.clear();
-
 							AddMove({{pPiece->file(), pPiece->rank()}, {pPiece->file() - fileDiff, iNewRank}}, bCheck, moves);
 						}
 					}
