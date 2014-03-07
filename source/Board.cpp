@@ -277,7 +277,7 @@ void Board::GenerateCastleMove(Piece* pPiece, bool bCheck, std::vector<BoardMove
 		Piece* rooks[2] = {m_board.front()[y - 1], m_board.back()[y - 1]};
 		int dir[2] = {-1, 1};
 
-		for(unsigned int i = 0; i < 1; ++i)
+		for(unsigned int i = 0; i < 2; ++i)
 		{
 			// See if the left or right rook has moved
 			if(rooks[i] != nullptr && !rooks[i]->hasMoved())
