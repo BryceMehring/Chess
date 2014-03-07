@@ -277,20 +277,21 @@ void Board::GenerateCastleMove(Piece* pPiece, bool bCheck, std::vector<BoardMove
 		Piece* rooks[2] = {m_board.front()[y - 1], m_board.back()[y - 1]};
 		int dir[2] = {-1, 1};
 
+		int oldPlayerID = m_iPlayerID;
+		m_iPlayerID = !m_iPlayerID;
+
+		// Generate moves for the other team
+		std::vector<BoardMove> enemyMoves = GetMoves(false);
+		m_iPlayerID = oldPlayerID;
+
 		for(unsigned int i = 0; i < 2; ++i)
 		{
 			// See if the left or right rook has moved
 			if(rooks[i] != nullptr && !rooks[i]->hasMoved())
 			{
-				int oldPlayerID = m_iPlayerID;
-				m_iPlayerID = !m_iPlayerID;
-
-				// Generate moves for the other team
-				std::vector<BoardMove> enemyMoves = GetMoves(false);
-				m_iPlayerID = oldPlayerID;
-
 				ivec2 pos = {pPiece->file(), pPiece->rank()};
 
+				// todo: Move this code into a function
 				bool bValidState = true;
 
 				do

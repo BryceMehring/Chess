@@ -43,11 +43,19 @@ bool AI::run()
 		std::uniform_int_distribution<unsigned int> distribution(0,userMoves.size() - 1);
 		unsigned int iRandomPiece = distribution(m_generator);
 
-		//cout << *userMoves[iRandomPiece].pPiece << endl;
-		cout << "(" << userMoves[iRandomPiece].to.x <<","<<userMoves[iRandomPiece].to.y<<")"<<endl;
-		cout << userMoves.size() << endl;
-
 		Piece* pPiece = m_board.GetPiece(userMoves[iRandomPiece].from);
+
+		// Display all moves for this piece:
+
+		cout << "Valid Piece Moves: " << endl;
+		for(const BoardMove& m : userMoves)
+		{
+			if(m.from == userMoves[iRandomPiece].from)
+			{
+				cout << "From: (" << m.from.x << ", " << m.from.y << ")" << endl;
+				cout << "To: (" << m.to.x << ", " << m.to.y << ")" << endl;
+			}
+		}
 
 		pPiece->move(userMoves[iRandomPiece].to.x, userMoves[iRandomPiece].to.y, 'Q');
 	}
