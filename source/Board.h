@@ -3,22 +3,14 @@
 
 #include "Piece.h"
 #include "Move.h"
+#include "vec2.h"
 
 #include <vector>
 
-struct vec2
-{
-	vec2() : x(0), y(0) {}
-	vec2(int x, int y) : x(x), y(y) {}
-
-	int x;
-	int y;
-};
-
 struct BoardMove
 {
-	vec2 from;
-	vec2 to;
+	ivec2 from;
+	ivec2 to;
 };
 
 // Moves, then unmoves a piece move upon destruction
@@ -34,7 +26,7 @@ private:
 	const BoardMove* m_pMove;
 	Board* m_pBoard;
 
-	vec2 m_oldKingPos;
+	ivec2 m_oldKingPos;
 	Piece* m_pOldDest;
 	Piece* m_pMovingPiece;
 
@@ -56,7 +48,7 @@ public:
 
 	// Returns the piece at pos
 	// If there is not a piece at pos, nullptr is returned
-	Piece* GetPiece(const vec2& pos);
+	Piece* GetPiece(const ivec2& pos);
 
 private:
 
@@ -71,13 +63,15 @@ private:
 	// Generates valid moves for knights and kings
 	void GenerateDiscreteMoves(Piece* pPiece, bool bCheck, std::vector<BoardMove>& moves);
 
+	void GenerateCastleMove(Piece* pPiece, bool bCheck, std::vector<BoardMove>& moves);
+
 	void AddMove(const BoardMove& move, bool bCheck, std::vector<BoardMove>& moves);
 
 	// Returns true if pos is on the board
 	bool IsOnBoard(int pos) const;
 
 	// Returns true if pos is on the board
-	bool IsOnBoard(const vec2& pos) const;
+	bool IsOnBoard(const ivec2& pos) const;
 
 	// Returns true if the current tile is empty
 	bool IsTileEmpty(int file, int rank) const;
@@ -88,13 +82,16 @@ private:
 	// Returns true if the current state of the board is in check
 	bool IsInCheck(const BoardMove& move);
 
+	// Returns true if the current state of the board is in check
+	bool IsInCheck();
+
 	// Clears the board
 	void Clear();
 
 private:
 
 	std::vector<std::vector<Piece*>> m_board;
-	vec2 m_kingPos[2];
+	ivec2 m_kingPos[2];
 	BoardMove m_LastMove;
 	int m_iPlayerID;
 };

@@ -78,7 +78,7 @@ std::vector<BoardMove> Board::Update(int playerID, const Move* pLastMove, std::v
 	return GetMoves();
 }
 
-Piece* Board::GetPiece(const vec2 &pos)
+Piece* Board::GetPiece(const ivec2 &pos)
 {
 	assert(IsOnBoard(pos));
 	return m_board[pos.x - 1][pos.y - 1];
@@ -98,8 +98,9 @@ std::vector<BoardMove> Board::GetMoves(bool bCheck)
 				case 'P':
 					GeneratePawnMoves(piece, bCheck, moves);
 					break;
-				case 'N':
 				case 'K':
+					GenerateCastleMove(piece, bCheck, moves);
+				case 'N':
 					GenerateDiscreteMoves(piece, bCheck, moves);
 					break;
 				case 'B':
@@ -182,7 +183,7 @@ void Board::GenerateDirectionMoves(Piece* pPiece, bool bCheck, std::vector<Board
 {
 	assert(pPiece->type() == int('B') || pPiece->type() == int('R') || pPiece->type() == int('Q'));
 
-	const vec2 dir[] =
+	const ivec2 dir[] =
 	{
 		// Bishop
 		{1,1},
@@ -211,21 +212,19 @@ void Board::GenerateDirectionMoves(Piece* pPiece, bool bCheck, std::vector<Board
 
 	for(unsigned int i = start; i < end; ++i)
 	{
-		vec2 pos = {pPiece->file(), pPiece->rank()};
+		ivec2 pos = {pPiece->file(), pPiece->rank()};
 
 		do
 		{
 			pos.x += dir[i].x;
 			pos.y += dir[i].y;
 
-			if(IsOnBoard(pos))
+			if(IsOnBoard(pos) && !IsTileOwner(pos.x,pos.y))
 			{
-				if(!IsTileOwner(pos.x,pos.y))
-				{
-					// If the tile is empty or is an enemy
-					AddMove({{pPiece->file(), pPiece->rank()}, pos}, bCheck, moves);
-				}
+				// If the tile is empty or is an enemy
+				AddMove({{pPiece->file(), pPiece->rank()}, pos}, bCheck, moves);
 			}
+
 		} while(IsOnBoard(pos) && IsTileEmpty(pos.x,pos.y));
 	}
 }
@@ -234,7 +233,7 @@ void Board::GenerateDiscreteMoves(Piece* pPiece, bool bCheck, std::vector<BoardM
 {
 	assert(pPiece->type() == int('N') || pPiece->type() == int('K'));
 
-	const vec2 dir[][8] =
+	const ivec2 dir[][8] =
 	{
 		// Knight
 		{
@@ -250,9 +249,9 @@ void Board::GenerateDiscreteMoves(Piece* pPiece, bool bCheck, std::vector<BoardM
 
 	unsigned int index = pPiece->type() == int('K') ? 1 : 0;
 
-	for(const vec2& move : dir[index])
+	for(const ivec2& move : dir[index])
 	{
-		vec2 pos = {pPiece->file(), pPiece->rank()};
+		ivec2 pos = {pPiece->file(), pPiece->rank()};
 		pos.x += move.x;
 		pos.y += move.y;
 
@@ -260,6 +259,63 @@ void Board::GenerateDiscreteMoves(Piece* pPiece, bool bCheck, std::vector<BoardM
 		{
 			AddMove({{pPiece->file(), pPiece->rank()},pos}, bCheck, moves);
 		}
+	}
+}
+
+void Board::GenerateCastleMove(Piece* pPiece, bool bCheck, std::vector<BoardMove>& moves)
+{
+	if(!bCheck)
+		return;
+
+	// Castle move logic
+	// Generate moves for the other team
+	// Check to see if the king has moved
+	if(!pPiece->hasMoved() && !IsInCheck())
+	{
+		int y = pPiece->rank();
+
+		Piece* rooks[2] = {m_board.front()[y - 1], m_board.back()[y - 1]};
+		int dir[2] = {-1, 1};
+
+		for(unsigned int i = 0; i < 1; ++i)
+		{
+			// See if the left or right rook has moved
+			if(rooks[i] != nullptr && !rooks[i]->hasMoved())
+			{
+				int oldPlayerID = m_iPlayerID;
+				m_iPlayerID = !m_iPlayerID;
+
+				// Generate moves for the other team
+				std::vector<BoardMove> enemyMoves = GetMoves(false);
+				m_iPlayerID = oldPlayerID;
+
+				ivec2 pos = {pPiece->file(), pPiece->rank()};
+
+				bool bValidState = true;
+
+				do
+				{
+					pos.x += dir[i];
+					bValidState &= IsTileEmpty(pos.x,pos.y);
+
+					if(bValidState && (pos.x == 4 || pos.x == 6))
+					{
+						for(const BoardMove& m : enemyMoves)
+						{
+							bValidState &= (m.to != pos);
+						}
+					}
+
+				} while(bValidState && (pos.x > 2 && pos.x < 7));
+
+				// If nothing is in the way of the rook and the king
+				if(bValidState)
+				{
+					AddMove({{pPiece->file(), pPiece->rank()}, {pPiece->file() + dir[i] * 2, pPiece->rank()}},bCheck, moves);
+				}
+			}
+		}
+
 	}
 }
 
@@ -276,7 +332,7 @@ bool Board::IsOnBoard(int coord) const
 	return (coord <= 8 && coord >= 1);
 }
 
-bool Board::IsOnBoard(const vec2& coord) const
+bool Board::IsOnBoard(const ivec2& coord) const
 {
 	return IsOnBoard(coord.x) && IsOnBoard(coord.y);
 }
@@ -303,6 +359,11 @@ bool Board::IsInCheck(const BoardMove& move)
 	// todo: clean this up
 	ApplyMove triedMove(&move, this);
 
+	return IsInCheck();
+}
+
+bool Board::IsInCheck()
+{
 	int oldPlayerID = m_iPlayerID;
 	m_iPlayerID = !m_iPlayerID;
 
