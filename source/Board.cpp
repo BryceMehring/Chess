@@ -4,7 +4,8 @@
 #include <iostream>
 
 
-using namespace std;
+using std::cout;
+using std::endl;
 
 ApplyMove::ApplyMove(const BoardMove* pMove, Board* pBoard) : m_pMove(pMove), m_pBoard(pBoard)
 {
@@ -159,7 +160,7 @@ void Board::GeneratePawnMoves(Piece* pPiece, bool bCheck, std::vector<BoardMove>
 
 						if(abs(fileDiff) == 1)
 						{
-							AddMove({{pPiece->file(), pPiece->rank()}, {pPiece->file() - fileDiff, iNewRank}}, bCheck, moves);
+							AddMove({{pPiece->file(), pPiece->rank()}, {pPiece->file() - fileDiff, iNewRank}, 'Q', SpecialMove::EnPassant}, bCheck, moves);
 						}
 					}
 				}
@@ -186,7 +187,7 @@ void Board::GeneratePromotedPawnMoves(const ivec2& from, const ivec2& to, bool b
 	{
 		for(int promotion : {'Q', 'B', 'N', 'R'})
 		{
-			AddMove({from, to, promotion}, bCheck, moves);
+			AddMove({from, to, promotion, SpecialMove::Promotion}, bCheck, moves);
 		}
 	}
 	else
@@ -328,7 +329,7 @@ void Board::GenerateCastleMove(Piece* pPiece, bool bCheck, std::vector<BoardMove
 				// If nothing is in the way of the rook and the king
 				if(bValidState)
 				{
-					AddMove({{pPiece->file(), pPiece->rank()}, {pPiece->file() + dir[i] * 2, pPiece->rank()}},bCheck, moves);
+					AddMove({{pPiece->file(), pPiece->rank()}, {pPiece->file() + dir[i] * 2, pPiece->rank()}, 'Q', SpecialMove::Castle}, bCheck, moves);
 				}
 			}
 		}

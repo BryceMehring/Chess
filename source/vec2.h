@@ -30,7 +30,6 @@ bool operator!=(const Vector2d<T>& a, const Vector2d<T>& b)
 }
 
 typedef Vector2d<int> ivec2;
-typedef Vector2d<unsigned int> uvec2;
 typedef Vector2d<float> vec2;
 
 #endif //_VEC2_

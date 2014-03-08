@@ -4,27 +4,9 @@
 #include "Piece.h"
 #include "Move.h"
 #include "vec2.h"
+#include "BoardMove.h"
 
 #include <vector>
-
-struct BoardMove
-{
-	BoardMove() : promotion('Q')
-	{
-	}
-
-	BoardMove(const ivec2& f, const ivec2& t) : from(f), to(t), promotion('Q')
-	{
-	}
-
-	BoardMove(const ivec2& f, const ivec2& t, int p) : from(f), to(t), promotion(p)
-	{
-	}
-
-	ivec2 from;
-	ivec2 to;
-	int promotion;
-};
 
 // Moves, then unmoves a piece move upon destruction
 class ApplyMove

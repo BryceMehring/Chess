@@ -57,8 +57,7 @@ bool AI::run()
 		{
 			if(m.from == userMoves[iRandomPiece].from)
 			{
-				cout << "From: (" << m.from.x << ", " << m.from.y << ")" << endl;
-				cout << "To: (" << m.to.x << ", " << m.to.y << ")" << endl;
+				cout << m << endl;
 			}
 		}
 
