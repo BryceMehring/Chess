@@ -19,7 +19,12 @@ std::ostream& operator<<(std::ostream& stream, const BoardMove& move)
 			"EnPassant", "Castle", "Promotion", "Capture"
 		};
 
-		stream << "Special Move: " << SpecialMoveStrings[(int)move.specialMove];
+		stream << "Special Move: " << SpecialMoveStrings[(int)move.specialMove] << endl;
+
+		if(move.specialMove == SpecialMove::Promotion)
+		{
+			stream << "Promotion Type: " << char(move.promotion) << endl;
+		}
 	}
 
 	return stream;

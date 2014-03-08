@@ -1,5 +1,4 @@
 #include "AI.h"
-#include "util.h"
 
 #include <algorithm>
 #include <cassert>
