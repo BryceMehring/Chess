@@ -57,7 +57,7 @@ bool AI::run()
 			}
 		}
 
-		pPiece->move(userMoves[iRandomPiece].to.x, userMoves[iRandomPiece].to.y, 'Q');
+		pPiece->move(userMoves[iRandomPiece].to.x, userMoves[iRandomPiece].to.y, userMoves[iRandomPiece].promotion);
 	}
 
 	return true;

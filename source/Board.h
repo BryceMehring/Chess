@@ -9,8 +9,21 @@
 
 struct BoardMove
 {
+	BoardMove() : promotion('Q')
+	{
+	}
+
+	BoardMove(const ivec2& f, const ivec2& t) : from(f), to(t), promotion('Q')
+	{
+	}
+
+	BoardMove(const ivec2& f, const ivec2& t, int p) : from(f), to(t), promotion(p)
+	{
+	}
+
 	ivec2 from;
 	ivec2 to;
+	int promotion;
 };
 
 // Moves, then unmoves a piece move upon destruction
@@ -57,14 +70,19 @@ private:
 	// Generate valid moves for pawns
 	void GeneratePawnMoves(Piece* pPiece, bool bCheck, std::vector<BoardMove>& moves);
 
+	// Generates valid moves for pawns that have the possilbity of being promoted
+	void GeneratePromotedPawnMoves(const ivec2& from, const ivec2& to, bool bCheck, std::vector<BoardMove>& moves);
+
 	// Generates valid moves for bishops rooks and queens
 	void GenerateDirectionMoves(Piece* pPiece, bool bCheck, std::vector<BoardMove>& moves);
 
 	// Generates valid moves for knights and kings
 	void GenerateDiscreteMoves(Piece* pPiece, bool bCheck, std::vector<BoardMove>& moves);
 
+	// Generates valid castle moves
 	void GenerateCastleMove(Piece* pPiece, bool bCheck, std::vector<BoardMove>& moves);
 
+	// Adds a move to the move list only if after applying the move, it does not put us in check, or if bCheck is false
 	void AddMove(const BoardMove& move, bool bCheck, std::vector<BoardMove>& moves);
 
 	// Returns true if pos is on the board

@@ -128,7 +128,8 @@ void Board::GeneratePawnMoves(Piece* pPiece, bool bCheck, std::vector<BoardMove>
 		// First check if we can move to the tile in front of us
 		if(IsTileEmpty(pPiece->file(),iNewRank))
 		{
-			AddMove({{pPiece->file(), pPiece->rank()}, {pPiece->file(), iNewRank}}, bCheck, moves);
+			// At this point, it is possible for us to promote
+			GeneratePromotedPawnMoves({pPiece->file(), pPiece->rank()}, {pPiece->file(), iNewRank}, bCheck, moves);
 
 			// Check if we can move 2 tiles if this is the first move
 			if(!pPiece->hasMoved())
@@ -172,10 +173,25 @@ void Board::GeneratePawnMoves(Piece* pPiece, bool bCheck, std::vector<BoardMove>
 			{
 				if(!IsTileEmpty(iNewFile,iNewRank) && !IsTileOwner(iNewFile, iNewRank))
 				{
-					AddMove({{pPiece->file(), pPiece->rank()}, {iNewFile, iNewRank}}, bCheck, moves);
+					GeneratePromotedPawnMoves({pPiece->file(), pPiece->rank()}, {iNewFile, iNewRank}, bCheck, moves);
 				}
 			}
 		}
+	}
+}
+
+void Board::GeneratePromotedPawnMoves(const ivec2& from, const ivec2& to, bool bCheck, std::vector<BoardMove>& moves)
+{
+	if((to.y == 1 && m_iPlayerID == 1) || (to.y == 8 && m_iPlayerID == 0))
+	{
+		for(int promotion : {'Q', 'B', 'N', 'R'})
+		{
+			AddMove({from, to, promotion}, bCheck, moves);
+		}
+	}
+	else
+	{
+		AddMove({from, to}, bCheck, moves);
 	}
 }
 
