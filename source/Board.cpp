@@ -145,7 +145,7 @@ void Board::GeneratePawnMoves(Piece* pPiece, bool bCheck, std::vector<BoardMove>
 		}
 
 		// En passant check
-		if(m_LastMove.from.x != 0)
+		if((pPiece->rank() == 5 && m_iPlayerID == 0) || (pPiece->rank() == 4 && m_iPlayerID == 1))
 		{
 			if(abs(m_LastMove.to.y - m_LastMove.from.y) == 2)
 			{
