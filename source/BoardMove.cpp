@@ -9,22 +9,31 @@ static char NumberToLetter(int number)
 
 std::ostream& operator<<(std::ostream& stream, const BoardMove& move)
 {
-	stream << NumberToLetter(move.from.x) << move.from.y << " " << NumberToLetter(move.to.x) << move.to.y << endl;
+	stream << NumberToLetter(move.from.x) << move.from.y << "-" << NumberToLetter(move.to.x) << move.to.y << " ";
 
 	if(move.specialMove != SpecialMove::None)
 	{
-		const char* SpecialMoveStrings[] =
+		switch(move.specialMove)
 		{
-			"EnPassant", "Castle", "Promotion", "Capture"
-		};
-
-		stream << "Special Move: " << SpecialMoveStrings[(int)move.specialMove] << endl;
-
-		if(move.specialMove == SpecialMove::Promotion)
-		{
-			stream << "Promotion Type: " << char(move.promotion) << endl;
+		case SpecialMove::EnPassant:
+			stream << "e.p.";
+			break;
+		case SpecialMove::Castle:
+			stream << "0-0";
+			if((move.to.x - move.from.x) < 0)
+			{
+				stream << "-0";
+			}
+			break;
+		case SpecialMove::Promotion:
+			stream << char(move.promotion);
+		default:
+			break;
+		
 		}
 	}
+	
+	stream << endl;
 
 	return stream;
 }
