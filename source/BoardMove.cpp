@@ -9,8 +9,7 @@ static char NumberToLetter(int number)
 
 std::ostream& operator<<(std::ostream& stream, const BoardMove& move)
 {
-	stream << "From: " << NumberToLetter(move.from.x) << move.from.y << endl;
-	stream << "To: " << NumberToLetter(move.to.x) << move.to.y << endl;
+	stream << NumberToLetter(move.from.x) << move.from.y << " " << NumberToLetter(move.to.x) << move.to.y << endl;
 
 	if(move.specialMove != SpecialMove::None)
 	{
