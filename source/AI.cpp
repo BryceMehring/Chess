@@ -28,7 +28,10 @@ void AI::init()
 //Return true to end your turn, return false to ask the server for updated information.
 bool AI::run()
 {
+
+#ifdef DEBUG_OUTPUT
 	DrawBoard();
+#endif
 
 	Move* pPreviousMove = nullptr;
 	if(!moves.empty())
@@ -45,6 +48,8 @@ bool AI::run()
 
 		Piece* pPiece = m_board.GetPiece(userMoves[iRandomPiece].from);
 
+#ifdef DEBUG_OUTPUT
+
 		// Display all moves for this piece:
 
 		cout << "Valid Piece Moves: " << endl;
@@ -56,6 +61,8 @@ bool AI::run()
 				cout << "To: (" << m.to.x << ", " << m.to.y << ")" << endl;
 			}
 		}
+
+#endif // DEBUG_OUTPUT
 
 		pPiece->move(userMoves[iRandomPiece].to.x, userMoves[iRandomPiece].to.y, userMoves[iRandomPiece].promotion);
 	}
