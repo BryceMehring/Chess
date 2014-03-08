@@ -3,7 +3,7 @@ headers = $(wildcard source/*.h)
 objects = $(sources:%.cpp=%.o)
 deps = $(sources:%.cpp=%.d)
 CFLAGS += -O2 -pedantic -Wall
-CXXFLAGS += -std=c++0x -O2 -pedantic -Wall
+CXXFLAGS += -std=c++0x -O2 -pedantic -Wall -DDEBUG_OUTPUT
 
 override CPPFLAGS += -Isource/sexp
 
