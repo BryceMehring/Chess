@@ -2,8 +2,8 @@ sources = $(wildcard source/*.cpp)
 headers = $(wildcard source/*.h)
 objects = $(sources:%.cpp=%.o)
 deps = $(sources:%.cpp=%.d)
-CFLAGS += -g -pedantic -Wall
-CXXFLAGS += -g -pedantic -Wall -std=c++0x
+CFLAGS += -O2 -pedantic -Wall
+CXXFLAGS += -std=c++0x -O2 -pedantic -Wall
 
 override CPPFLAGS += -Isource/sexp
 
