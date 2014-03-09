@@ -9,7 +9,6 @@ enum class SpecialMove
 	EnPassant,
 	Castle,
 	Promotion,
-	Capture,
 	None
 };
 

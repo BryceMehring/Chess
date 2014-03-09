@@ -15,28 +15,33 @@ std::ostream& operator<<(std::ostream& stream, const BoardMove& move)
 	{
 		spacing = 'x';
 	}
-	
-	stream << char(move.pFrom->type()) << NumberToLetter(move.from.x) << move.from.y << spacing << NumberToLetter(move.to.x) << move.to.y << " ";
 
-	switch(move.specialMove)
+	if(move.pFrom->type() != 'P')
 	{
-	case SpecialMove::EnPassant:
-		stream << "e.p.";
-		break;
-	case SpecialMove::Castle:
+		stream << char(move.pFrom->type());
+	}
+
+	if(move.specialMove != SpecialMove::Castle)
+	{
+		stream << NumberToLetter(move.from.x) << move.from.y << spacing << NumberToLetter(move.to.x) << move.to.y;
+
+		if(move.specialMove == SpecialMove::EnPassant)
+		{
+			stream << " e.p.";
+		}
+		else if(move.specialMove == SpecialMove::Promotion)
+		{
+			stream << char(move.promotion);
+		}
+	}
+	else
+	{
 		stream << "0-0";
 		if((move.to.x - move.from.x) < 0)
 		{
 			stream << "-0";
 		}
-		break;
-	case SpecialMove::Promotion:
-		stream << char(move.promotion);
-	default:
-		break;
-
 	}
-
 	
 	stream << endl;
 
