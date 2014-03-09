@@ -23,7 +23,7 @@ clean:
 	$(MAKE) -C source/sexp clean
 
 client: $(objects) source/sexp/sexp.a
-	$(CXX) $(LDFLAGS) $(LOADLIBES) $(LDLIBS) $^ -g -o client
+	$(CXX) $(LDFLAGS) $(LOADLIBES) $(LDLIBS) $^ -o client
 
 libclient.so: libclient_network.o libclient_game.o libclient_getters.o libclient_util.o source/sexp/libclient_sexp.a
 	$(CXX) -shared -Wl,-soname,libclient.so $(LDFLAGS) $(LOADLIBES) $(LDLIBS) $^ -o libclient.so
