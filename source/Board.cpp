@@ -140,7 +140,9 @@ void Board::GeneratePawnMoves(Piece* pPiece, bool bCheck, std::vector<BoardMove>
 				// First check if we can move to the tile in front of us
 				if(IsTileEmpty(pPiece->file(),iDoubleMoveRank))
 				{
-					AddMove({{pPiece->file(), pPiece->rank()}, {pPiece->file(), iDoubleMoveRank}}, bCheck, moves);
+					ivec2 from = {pPiece->file(), pPiece->rank()};
+					ivec2 to = {pPiece->file(), iDoubleMoveRank};
+					AddMove({from, to, GetPiece(from), GetPiece(to)}, bCheck, moves);
 				}
 			}
 		}
@@ -160,7 +162,9 @@ void Board::GeneratePawnMoves(Piece* pPiece, bool bCheck, std::vector<BoardMove>
 
 						if(abs(fileDiff) == 1)
 						{
-							AddMove({{pPiece->file(), pPiece->rank()}, {pPiece->file() - fileDiff, iNewRank}, 'Q', SpecialMove::EnPassant}, bCheck, moves);
+							ivec2 from = {pPiece->file(), pPiece->rank()};
+							ivec2 to = {pPiece->file() - fileDiff, iNewRank};
+							AddMove({from, to, GetPiece(from), GetPiece(to), 'Q', SpecialMove::EnPassant}, bCheck, moves);
 						}
 					}
 				}
@@ -187,12 +191,12 @@ void Board::GeneratePromotedPawnMoves(const ivec2& from, const ivec2& to, bool b
 	{
 		for(int promotion : {'Q', 'B', 'N', 'R'})
 		{
-			AddMove({from, to, promotion, SpecialMove::Promotion}, bCheck, moves);
+			AddMove({from, to, GetPiece(from), GetPiece(to), promotion, SpecialMove::Promotion}, bCheck, moves);
 		}
 	}
 	else
 	{
-		AddMove({from, to}, bCheck, moves);
+		AddMove({from, to, GetPiece(from), GetPiece(to)}, bCheck, moves);
 	}
 }
 
@@ -239,7 +243,8 @@ void Board::GenerateDirectionMoves(Piece* pPiece, bool bCheck, std::vector<Board
 			if(IsOnBoard(pos) && !IsTileOwner(pos.x,pos.y))
 			{
 				// If the tile is empty or is an enemy
-				AddMove({{pPiece->file(), pPiece->rank()}, pos}, bCheck, moves);
+				ivec2 from = {pPiece->file(), pPiece->rank()};
+				AddMove({from, pos, GetPiece(from), GetPiece(pos)}, bCheck, moves);
 			}
 
 		} while(IsOnBoard(pos) && IsTileEmpty(pos.x,pos.y));
@@ -274,7 +279,8 @@ void Board::GenerateDiscreteMoves(Piece* pPiece, bool bCheck, std::vector<BoardM
 
 		if(IsOnBoard(pos) && !IsTileOwner(pos.x,pos.y))
 		{
-			AddMove({{pPiece->file(), pPiece->rank()},pos}, bCheck, moves);
+			ivec2 from = {pPiece->file(), pPiece->rank()};
+			AddMove({from, pos, GetPiece(from), GetPiece(pos)}, bCheck, moves);
 		}
 	}
 }
@@ -329,7 +335,9 @@ void Board::GenerateCastleMove(Piece* pPiece, bool bCheck, std::vector<BoardMove
 				// If nothing is in the way of the rook and the king
 				if(bValidState)
 				{
-					AddMove({{pPiece->file(), pPiece->rank()}, {pPiece->file() + dir[i] * 2, pPiece->rank()}, 'Q', SpecialMove::Castle}, bCheck, moves);
+					ivec2 from = {pPiece->file(), pPiece->rank()};
+					ivec2 to = {pPiece->file() + dir[i] * 2, pPiece->rank()};
+					AddMove({from, to, GetPiece(from), GetPiece(to), 'Q', SpecialMove::Castle}, bCheck, moves);
 				}
 			}
 		}

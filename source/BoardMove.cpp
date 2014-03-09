@@ -1,4 +1,5 @@
 #include "BoardMove.h"
+#include "Piece.h"
 
 using std::endl;
 
@@ -9,7 +10,13 @@ static char NumberToLetter(int number)
 
 std::ostream& operator<<(std::ostream& stream, const BoardMove& move)
 {
-	stream << NumberToLetter(move.from.x) << move.from.y << "-" << NumberToLetter(move.to.x) << move.to.y << " ";
+	char spacing = '-';
+	if(move.pTo != nullptr)
+	{
+		spacing = 'x';
+	}
+	
+	stream << char(move.pFrom->type()) << NumberToLetter(move.from.x) << move.from.y << spacing << NumberToLetter(move.to.x) << move.to.y << " ";
 
 	if(move.specialMove != SpecialMove::None)
 	{

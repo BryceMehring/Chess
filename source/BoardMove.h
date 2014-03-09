@@ -13,26 +13,23 @@ enum class SpecialMove
 	None
 };
 
+class Piece;
+
 struct BoardMove
 {
 	BoardMove() : promotion('Q'), specialMove(SpecialMove::None)
 	{
 	}
 
-	BoardMove(const ivec2& f, const ivec2& t) : from(f), to(t), promotion('Q'), specialMove(SpecialMove::None)
-	{
-	}
-
-	BoardMove(const ivec2& f, const ivec2& t, int p) : from(f), to(t), promotion(p), specialMove(SpecialMove::None)
-	{
-	}
-
-	BoardMove(const ivec2& f, const ivec2& t, int p, SpecialMove m) : from(f), to(t), promotion(p), specialMove(m)
+	BoardMove(const ivec2& f, const ivec2& t, Piece* pF = nullptr, Piece* pT = nullptr, int p = 'Q', SpecialMove m = SpecialMove::None) : 
+	from(f), to(t), pFrom(pF), pTo(pT), promotion('Q'), specialMove(SpecialMove::None)
 	{
 	}
 
 	ivec2 from;
 	ivec2 to;
+	Piece* pFrom;
+	Piece* pTo;
 	int promotion;
 	SpecialMove specialMove;
 };
