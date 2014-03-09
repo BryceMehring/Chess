@@ -290,14 +290,9 @@ void Board::GenerateCastleMove(Piece* pPiece, bool bCheck, std::vector<BoardMove
 	if(!bCheck)
 		return;
 
-	// Castle move logic
-	// Generate moves for the other team
-	// Check to see if the king has moved
 	if(!pPiece->hasMoved() && !IsInCheck())
 	{
-		int y = pPiece->rank();
-
-		Piece* rooks[2] = {m_board.front()[y - 1], m_board.back()[y - 1]};
+		Piece* rooks[2] = {m_board.front()[pPiece->rank() - 1], m_board.back()[pPiece->rank() - 1]};
 		int dir[2] = {-1, 1};
 
 		int oldPlayerID = m_iPlayerID;
@@ -332,7 +327,7 @@ void Board::GenerateCastleMove(Piece* pPiece, bool bCheck, std::vector<BoardMove
 
 				} while(bValidState && (pos.x > 2 && pos.x < 7));
 
-				// If nothing is in the way of the rook and the king
+				// If nothing is in the way of the rook and the king and the king cannot be attacked on either side
 				if(bValidState)
 				{
 					ivec2 from = {pPiece->file(), pPiece->rank()};
