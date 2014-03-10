@@ -41,6 +41,8 @@ public:
 	// Updates the grid and returns all valid moves
 	std::vector<BoardMove> Update(int playerID, const Move* pLastMove, std::vector<Piece>& pieces);
 
+	float GetWorth() const;
+
 	// Returns the piece at pos
 	// If there is not a piece at pos, nullptr is returned
 	Piece* GetPiece(const ivec2& pos);

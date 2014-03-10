@@ -79,6 +79,43 @@ std::vector<BoardMove> Board::Update(int playerID, const Move* pLastMove, std::v
 	return GetMoves();
 }
 
+float Board::GetWorth() const
+{
+	float fTotal = 0.0f;
+	for(auto& fileIter : m_board)
+	{
+		for(Piece* piece : fileIter)
+		{
+			if(piece != nullptr && m_iPlayerID == piece->owner())
+			{
+				switch(piece->type())
+				{
+				case 'P':
+					fTotal += 1;
+					break;
+				case 'N':
+					fTotal += 3.2f;
+					break;
+				case 'B':
+					fTotal += 3.33f;
+					break;
+				case 'R':
+					fTotal += 5.1f;
+					break;
+				case 'Q':
+					fTotal += 8.8f;
+					break;
+				default:
+					assert("Invalid piece type" && false);
+					break;
+				}
+			}
+		}
+	}
+
+	return fTotal;
+}
+
 Piece* Board::GetPiece(const ivec2 &pos)
 {
 	assert(IsOnBoard(pos));
@@ -319,9 +356,9 @@ void Board::GenerateCastleMove(Piece* pPiece, bool bCheck, std::vector<BoardMove
 
 					if(bValidState && (pos.x == 4 || pos.x == 6))
 					{
-						for(const BoardMove& m : enemyMoves)
+						for(auto iter = enemyMoves.begin(); bValidState && (iter != enemyMoves.end()); ++iter)
 						{
-							bValidState &= (m.to != pos);
+							bValidState &= (iter->to != pos);
 						}
 					}
 
