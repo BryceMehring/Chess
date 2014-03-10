@@ -286,7 +286,6 @@ DLLEXPORT int networkLoop(Connection* c)
     sexp_t* base, *expression, *sub;
 
     char* message = rec_string(c->socket);
-    string text = message;
     base = extract_sexpr(message);
     delete[] message;
     expression = base->list;

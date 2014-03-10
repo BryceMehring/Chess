@@ -1,4 +1,5 @@
 #include "AI.h"
+#include "Timer.h"
 
 #include <algorithm>
 #include <cassert>
@@ -6,7 +7,7 @@
 using std::cout;
 using std::endl;
 
-AI::AI(Connection* conn) : BaseAI(conn) {}
+AI::AI(Connection* conn) : BaseAI(conn), m_totalTime(0), m_count(1) {}
 
 const char* AI::username()
 {
@@ -27,6 +28,10 @@ void AI::init()
 //Return true to end your turn, return false to ask the server for updated information.
 bool AI::run()
 {
+#ifdef DEBUG_OUTPUT
+	Timer timer;
+	timer.Start();
+#endif
 
 #ifdef DEBUG_OUTPUT
 	DrawBoard();
@@ -39,6 +44,15 @@ bool AI::run()
 	}
 
 	std::vector<BoardMove> userMoves = m_board.Update(playerID(), pPreviousMove, pieces);
+
+#ifdef DEBUG_OUTPUT
+	m_totalTime += timer.GetTime();
+	cout << "Average Time Spent: " << m_totalTime / m_count << endl;
+	cout << "Total Time Spent: " << m_totalTime << endl;
+	cout << "Servers time: " << 900 - players[playerID()].time() << endl;
+
+	m_count++;
+#endif
 
 	if(!userMoves.empty())
 	{

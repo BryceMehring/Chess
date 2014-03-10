@@ -23,6 +23,8 @@ private:
 
   Board m_board;
   std::random_device m_generator;
+  std::uint64_t m_totalTime;
+  unsigned int m_count;
 };
 
 #endif
