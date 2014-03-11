@@ -12,7 +12,7 @@ enum class SpecialMove
 	None
 };
 
-class Piece;
+class BoardPiece;
 
 struct BoardMove
 {
@@ -20,15 +20,15 @@ struct BoardMove
 	{
 	}
 
-	BoardMove(const ivec2& f, const ivec2& t, Piece* pF = nullptr, Piece* pT = nullptr, int p = 'Q', SpecialMove m = SpecialMove::None) : 
+	BoardMove(const ivec2& f, const ivec2& t, BoardPiece* pF = nullptr, BoardPiece* pT = nullptr, int p = 'Q', SpecialMove m = SpecialMove::None) :
 	from(f), to(t), pFrom(pF), pTo(pT), promotion(p), specialMove(m)
 	{
 	}
 
 	ivec2 from;
 	ivec2 to;
-	Piece* pFrom;
-	Piece* pTo;
+	BoardPiece* pFrom;
+	BoardPiece* pTo;
 	int promotion;
 	SpecialMove specialMove;
 	float worth;

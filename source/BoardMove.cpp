@@ -1,5 +1,5 @@
 #include "BoardMove.h"
-#include "Piece.h"
+#include "Board.h"
 
 using std::endl;
 
@@ -16,9 +16,9 @@ std::ostream& operator<<(std::ostream& stream, const BoardMove& move)
 		spacing = 'x';
 	}
 
-	if(move.pFrom->type() != 'P')
+	if(move.pFrom->type != 'P')
 	{
-		stream << char(move.pFrom->type());
+		stream << char(move.pFrom->type);
 	}
 
 	if(move.specialMove != SpecialMove::Castle)

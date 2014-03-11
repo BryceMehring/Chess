@@ -5,8 +5,18 @@
 #include "Move.h"
 #include "vec2.h"
 #include "BoardMove.h"
+#include <unordered_map>
 
 #include <vector>
+
+struct BoardPiece
+{
+	int owner;
+	int file;
+	int rank;
+	int hasMoved;
+	int type;
+};
 
 // Moves, then unmoves a piece move upon destruction
 class ApplyMove
@@ -22,8 +32,8 @@ private:
 	Board* m_pBoard;
 
 	ivec2 m_oldKingPos;
-	Piece* m_pOldDest;
-	Piece* m_pMovingPiece;
+	int m_iOldPos;
+	int m_iTarget;
 
 	BoardMove m_LastMove;
 };
@@ -39,32 +49,34 @@ public:
 	Board();
 
 	// Updates the grid and returns all valid moves
-	std::vector<BoardMove> Update(int playerID, const Move* pLastMove, std::vector<Piece>& pieces);
+	void Update(int playerID, const Move* pLastMove, std::vector<Piece>& pieces);
+	std::vector<BoardMove> GetMoves();
 
 	float GetWorth() const;
 
 	// Returns the piece at pos
 	// If there is not a piece at pos, nullptr is returned
-	Piece* GetPiece(const ivec2& pos);
+	BoardPiece* GetPiece(const ivec2& pos);
+	const BoardPiece* GetPiece(const ivec2& pos) const;
 
 private:
 
-	std::vector<BoardMove> GetMoves(bool bCheck = true);
+	std::vector<BoardMove> GetMoves(bool bCheck);
 
 	// Generate valid moves for pawns
-	void GeneratePawnMoves(Piece* pPiece, bool bCheck, std::vector<BoardMove>& moves);
+	void GeneratePawnMoves(const BoardPiece& piece, bool bCheck, std::vector<BoardMove>& moves);
 
 	// Generates valid moves for pawns that have the possilbity of being promoted
 	void GeneratePromotedPawnMoves(const ivec2& from, const ivec2& to, bool bCheck, std::vector<BoardMove>& moves);
 
 	// Generates valid moves for bishops rooks and queens
-	void GenerateDirectionMoves(Piece* pPiece, bool bCheck, std::vector<BoardMove>& moves);
+	void GenerateDirectionMoves(const BoardPiece& piece, bool bCheck, std::vector<BoardMove>& moves);
 
 	// Generates valid moves for knights and kings
-	void GenerateDiscreteMoves(Piece* pPiece, bool bCheck, std::vector<BoardMove>& moves);
+	void GenerateDiscreteMoves(const BoardPiece& piece, bool bCheck, std::vector<BoardMove>& moves);
 
 	// Generates valid castle moves
-	void GenerateCastleMove(Piece* pPiece, bool bCheck, std::vector<BoardMove>& moves);
+	void GenerateCastleMove(const BoardPiece& piece, bool bCheck, std::vector<BoardMove>& moves);
 
 	// Adds a move to the move list only if after applying the move, it does not put us in check, or if bCheck is false
 	void AddMove(const BoardMove& move, bool bCheck, std::vector<BoardMove>& moves);
@@ -89,7 +101,9 @@ private:
 
 private:
 
-	std::vector<std::vector<Piece*>> m_board;
+	std::vector<std::vector<int>> m_board;
+	std::unordered_map<int,BoardPiece> m_pieces;
+
 	ivec2 m_kingPos[2];
 	BoardMove m_LastMove;
 	int m_iPlayerID;
