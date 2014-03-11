@@ -31,6 +31,7 @@ struct BoardMove
 	Piece* pTo;
 	int promotion;
 	SpecialMove specialMove;
+	float worth;
 };
 
 std::ostream& operator<<(std::ostream& stream, const BoardMove& move);

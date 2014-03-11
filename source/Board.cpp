@@ -105,6 +105,9 @@ float Board::GetWorth() const
 				case 'Q':
 					fTotal += 8.8f;
 					break;
+				case 'K':
+					fTotal += 800;
+					break;
 				default:
 					assert("Invalid piece type" && false);
 					break;
@@ -379,9 +382,16 @@ void Board::GenerateCastleMove(Piece* pPiece, bool bCheck, std::vector<BoardMove
 
 void Board::AddMove(const BoardMove& move, bool bCheck, std::vector<BoardMove>& moves)
 {
-	if(!bCheck || !IsInCheck(move))
+	ApplyMove triedMove(&move, this);
+	if(bCheck)
+	{
+		bCheck = IsInCheck();
+	}
+
+	if(!bCheck)
 	{
 		moves.push_back(move);
+		moves.back().worth = GetWorth();
 	}
 }
 
@@ -410,14 +420,6 @@ bool Board::IsTileOwner(int file, int rank) const
 		return false;
 
 	return (m_iPlayerID == m_board[file - 1][rank - 1]->owner());
-}
-
-bool Board::IsInCheck(const BoardMove& move)
-{
-	// todo: clean this up
-	ApplyMove triedMove(&move, this);
-
-	return IsInCheck();
 }
 
 bool Board::IsInCheck()

@@ -82,9 +82,6 @@ private:
 	bool IsTileOwner(int file, int rank) const;
 
 	// Returns true if the current state of the board is in check
-	bool IsInCheck(const BoardMove& move);
-
-	// Returns true if the current state of the board is in check
 	bool IsInCheck();
 
 	// Clears the board
