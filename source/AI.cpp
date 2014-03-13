@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cfloat>
 
 using std::cout;
 using std::endl;
@@ -43,7 +44,33 @@ bool AI::run()
 		pPreviousMove = &moves[0];
 	}
 
-	std::vector<BoardMove> userMoves = m_board.Update(playerID(), pPreviousMove, pieces);
+	m_board.Update(pPreviousMove, pieces);
+	std::vector<BoardMove> userMoves = m_board.GetMoves(playerID());
+
+	if(!userMoves.empty())
+	{
+		//std::uniform_int_distribution<unsigned int> distribution(0,userMoves.size() - 1);
+		//unsigned int iRandomPiece = distribution(m_generator);
+
+		unsigned int index = MiniMax();
+		Piece* pPiece = &m_board.GetPiece(userMoves[index].from)->piece;
+
+#ifdef DEBUG_OUTPUT
+
+		// Display all moves for this piece:
+
+		cout << "Valid Piece Moves: " << endl;
+		for(const BoardMove& m : userMoves)
+		{
+			if(m.from == userMoves[index].from)
+			{
+				cout << m << endl;
+			}
+		}
+
+#endif // DEBUG_OUTPUT
+		pPiece->move(userMoves[index].to.x, userMoves[index].to.y, userMoves[index].promotion);
+	}
 
 #ifdef DEBUG_OUTPUT
 	m_totalTime += timer.GetTime();
@@ -54,31 +81,6 @@ bool AI::run()
 	m_count++;
 #endif
 
-	if(!userMoves.empty())
-	{
-		std::uniform_int_distribution<unsigned int> distribution(0,userMoves.size() - 1);
-		unsigned int iRandomPiece = distribution(m_generator);
-
-		Piece* pPiece = m_board.GetPiece(userMoves[iRandomPiece].from);
-
-#ifdef DEBUG_OUTPUT
-
-		// Display all moves for this piece:
-
-		cout << "Valid Piece Moves: " << endl;
-		for(const BoardMove& m : userMoves)
-		{
-			if(m.from == userMoves[iRandomPiece].from)
-			{
-				cout << m << endl;
-			}
-		}
-
-#endif // DEBUG_OUTPUT
-
-		pPiece->move(userMoves[iRandomPiece].to.x, userMoves[iRandomPiece].to.y, userMoves[iRandomPiece].promotion);
-	}
-
 	return true;
 }
 
@@ -86,6 +88,48 @@ bool AI::run()
 void AI::end()
 {
 
+}
+
+unsigned int AI::MiniMax()
+{
+	unsigned int index = 0;
+	float value = MiniMax(3,0, playerID(),true,index);
+	return index;
+}
+
+float AI::MiniMax(int depth, float worth, int playerID, bool bMax, unsigned int& index)
+{
+	if(depth <= 0)
+		return worth;
+
+	float value = bMax ? -FLT_MAX : FLT_MAX;
+	std::vector<BoardMove> userMoves =  m_board.GetMoves(playerID);
+	for(unsigned int i = 0; i < userMoves.size(); ++i)
+	{
+		ApplyMove theMove(&userMoves[i], &m_board);
+
+		unsigned int unusedIndex;
+		float fMiniMaxValue = MiniMax(depth - 1, userMoves[i].worth, !playerID, !bMax, unusedIndex);
+
+		if(bMax)
+		{
+			if(fMiniMaxValue > value)
+			{
+				value = fMiniMaxValue;
+				index = i;
+			}
+		}
+		else
+		{
+			if(fMiniMaxValue < value)
+			{
+				value = fMiniMaxValue;
+				index = i;
+			}
+		}
+	}
+
+	return value;
 }
 
 void AI::DrawBoard() const

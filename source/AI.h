@@ -19,6 +19,8 @@ public:
 
 private:
 
+  unsigned int MiniMax();
+  float MiniMax(int depth, float worth, int playerID, bool bMax, unsigned int& index);
   void DrawBoard() const;
 
   Board m_board;
