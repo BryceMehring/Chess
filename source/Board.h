@@ -11,6 +11,7 @@
 
 struct BoardPiece
 {
+	Piece piece;
 	int owner;
 	int file;
 	int rank;
@@ -31,11 +32,12 @@ private:
 	const BoardMove* m_pMove;
 	Board* m_pBoard;
 
-	ivec2 m_oldKingPos;
-	int m_iOldPos;
-	int m_iTarget;
-
+	int m_oldIndex;
+	int m_newIndex;
+	int m_hasMoved;
+	//BoardPiece m_capturedPiece;
 	BoardMove m_LastMove;
+	ivec2 m_oldKingPos;
 };
 
 // Defines a chess board which manages generating valid action states
@@ -49,10 +51,10 @@ public:
 	Board();
 
 	// Updates the grid and returns all valid moves
-	void Update(int playerID, const Move* pLastMove, std::vector<Piece>& pieces);
-	std::vector<BoardMove> GetMoves();
+	void Update(const Move* pLastMove, std::vector<Piece>& pieces);
+	std::vector<BoardMove> GetMoves(int playerID);
 
-	float GetWorth() const;
+	float GetWorth(int playerID) const;
 
 	// Returns the piece at pos
 	// If there is not a piece at pos, nullptr is returned
@@ -61,13 +63,13 @@ public:
 
 private:
 
-	std::vector<BoardMove> GetMoves(bool bCheck);
+	std::vector<BoardMove> GetMoves(int playerID, bool bCheck);
 
 	// Generate valid moves for pawns
 	void GeneratePawnMoves(const BoardPiece& piece, bool bCheck, std::vector<BoardMove>& moves);
 
 	// Generates valid moves for pawns that have the possilbity of being promoted
-	void GeneratePromotedPawnMoves(const ivec2& from, const ivec2& to, bool bCheck, std::vector<BoardMove>& moves);
+	void GeneratePromotedPawnMoves(const ivec2& from, const ivec2& to, int playerID, bool bCheck, std::vector<BoardMove>& moves);
 
 	// Generates valid moves for bishops rooks and queens
 	void GenerateDirectionMoves(const BoardPiece& piece, bool bCheck, std::vector<BoardMove>& moves);
@@ -91,10 +93,10 @@ private:
 	bool IsTileEmpty(int file, int rank) const;
 
 	// Returns true if we currently own the tile
-	bool IsTileOwner(int file, int rank) const;
+	bool IsTileOwner(int file, int rank, int playerID) const;
 
 	// Returns true if the current state of the board is in check
-	bool IsInCheck();
+	bool IsInCheck(int playerID);
 
 	// Clears the board
 	void Clear();
@@ -106,7 +108,6 @@ private:
 
 	ivec2 m_kingPos[2];
 	BoardMove m_LastMove;
-	int m_iPlayerID;
 };
 
 #endif // _BOARD_
