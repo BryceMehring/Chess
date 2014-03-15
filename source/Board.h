@@ -6,6 +6,7 @@
 #include "vec2.h"
 #include "BoardMove.h"
 #include <unordered_map>
+#include <functional>
 
 #include <vector>
 
@@ -35,7 +36,6 @@ private:
 	int m_oldIndex;
 	int m_newIndex;
 	int m_hasMoved;
-	//BoardPiece m_capturedPiece;
 	BoardMove m_LastMove;
 	ivec2 m_oldKingPos;
 };
@@ -52,9 +52,8 @@ public:
 
 	// Updates the grid and returns all valid moves
 	void Update(const Move* pLastMove, std::vector<Piece>& pieces);
-	std::vector<BoardMove> GetMoves(int playerID);
 
-	float GetWorth(int playerID) const;
+	std::vector<BoardMove> GetMoves(int playerID);
 
 	// Returns the piece at pos
 	// If there is not a piece at pos, nullptr is returned
@@ -62,6 +61,8 @@ public:
 	const BoardPiece* GetPiece(const ivec2& pos) const;
 
 private:
+
+	float GetWorth(int playerID);
 
 	std::vector<BoardMove> GetMoves(int playerID, bool bCheck);
 
@@ -97,6 +98,8 @@ private:
 
 	// Returns true if the current state of the board is in check
 	bool IsInCheck(int playerID);
+
+	bool IsInCheckmate(int playerID);
 
 	// Clears the board
 	void Clear();

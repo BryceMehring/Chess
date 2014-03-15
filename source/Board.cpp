@@ -13,13 +13,6 @@ ApplyMove::ApplyMove(const BoardMove* pMove, Board* pBoard) : m_pMove(pMove), m_
 	m_oldIndex = pBoard->m_board[pMove->from.x - 1][pMove->from.y - 1];
 	m_newIndex = pBoard->m_board[pMove->to.x - 1][pMove->to.y - 1];
 
-	/*auto iter = pBoard->m_pieces.find(m_newIndex);
-	if(iter != pBoard->m_pieces.end())
-	{
-		m_capturedPiece = iter->second;
-		pBoard->m_pieces.erase(iter);
-	}*/
-
 	pBoard->m_board[pMove->from.x - 1][pMove->from.y - 1] = 0;
 	pBoard->m_board[pMove->to.x - 1][pMove->to.y - 1] = m_oldIndex;
 
@@ -47,11 +40,6 @@ ApplyMove::~ApplyMove()
 	{
 		m_pBoard->m_kingPos[m_pMove->pFrom->owner] = m_oldKingPos;
 	}
-
-	/*if(m_newIndex != 0)
-	{
-		m_pBoard->m_pieces.insert({m_capturedPiece.piece.id(), m_capturedPiece});
-	}*/
 
 	m_pBoard->m_board[m_pMove->from.x - 1][m_pMove->from.y - 1] = m_oldIndex;
 	m_pBoard->m_board[m_pMove->to.x - 1][m_pMove->to.y - 1] = m_newIndex;
@@ -101,8 +89,11 @@ std::vector<BoardMove> Board::GetMoves(int playerID)
 	return GetMoves(playerID, true);
 }
 
-float Board::GetWorth(int playerID) const
+float Board::GetWorth(int playerID)
 {
+	if(IsInCheckmate(!playerID))
+		return 10000.0f;
+
 	float fTotal[2] = {0,0};
 	for(auto iter : m_board)
 	{
@@ -115,46 +106,59 @@ float Board::GetWorth(int playerID) const
 
 				switch(piece.type)
 				{
-				case 'P':
-					fTotal[piece.owner] += 0.5f;
-					break;
-				case 'N':
-					fTotal[piece.owner] += 6.2f;
-					break;
-				case 'B':
-					fTotal[piece.owner] += 6.33f;
-					break;
-				case 'R':
-					if(piece.owner == 1)
+					case 'P':
 					{
-						fTotal[piece.owner] += 8 - piece.rank;
-					}
-					else
-					{
-						fTotal[piece.owner] += piece.rank;
-					}
+						float scalar = 1.0f;
+						if(piece.rank >= 3 && piece.rank <= 6)
+						{
+							scalar = 2.0f;
+						}
 
-					break;
-				case 'Q':
-					fTotal[piece.owner] += 9.8f;
-					break;
-				case 'K':
-					fTotal[piece.owner] += 800;
-					break;
-				default:
-					assert("Invalid piece type" && false);
-					break;
+						if(!IsTileEmpty(piece.file, piece.rank + (piece.owner == 1 ? 1 : -1)))
+						{
+							fTotal[piece.owner] += scalar*0.5f;
+						}
+						else
+						{
+							fTotal[piece.owner] += scalar*2.0f;
+						}
+						fTotal[piece.owner] += 1.0f;
+
+						break;
+					}
+					case 'N':
+						fTotal[piece.owner] += 3.0f;
+						break;
+					case 'B':
+						fTotal[piece.owner] += 3.0f;
+						break;
+					case 'R':
+						fTotal[piece.owner] += 6.0f;
+						if(piece.owner == 1)
+						{
+							fTotal[piece.owner] += piece.rank;
+						}
+						else
+						{
+							fTotal[piece.owner] += (8 - piece.rank);
+						}
+
+						break;
+					case 'Q':
+						fTotal[piece.owner] += 9.0f;
+						break;
+					case 'K':
+						fTotal[piece.owner] += 50.0f;
+						break;
+					default:
+						assert("Invalid piece type" && false);
+						break;
 				}
 			}
 		}
 	}
 
-	if(abs(fTotal[playerID] - fTotal[!playerID]) < 0.0001f)
-	{
-		return 0.1f;
-	}
-
-	return 2.0f*fTotal[playerID] / fTotal[!playerID];
+	return 2.0f*fTotal[playerID] / (fTotal[!playerID]);
 }
 
 BoardPiece* Board::GetPiece(const ivec2 &pos)
@@ -255,7 +259,7 @@ void Board::GeneratePawnMoves(const BoardPiece& piece, bool bCheck, std::vector<
 						{
 							ivec2 from = {piece.file, piece.rank};
 							ivec2 to = {piece.file - fileDiff, iNewRank};
-							AddMove({from, to, GetPiece(from), GetPiece(to), 'Q', SpecialMove::EnPassant}, bCheck, moves);
+							AddMove({from, to, GetPiece(from), GetPiece(m_LastMove.to), 'Q', SpecialMove::EnPassant}, bCheck, moves);
 						}
 					}
 				}
@@ -430,17 +434,20 @@ void Board::GenerateCastleMove(const BoardPiece& piece, bool bCheck, std::vector
 void Board::AddMove(const BoardMove& move, bool bCheck, std::vector<BoardMove>& moves)
 {
 	ApplyMove triedMove(&move, this);
+	bool bIsInCheck = false;
 	if(bCheck)
 	{
-		bCheck = IsInCheck(move.pFrom->owner);
+		bIsInCheck = IsInCheck(move.pFrom->owner);
 	}
 
-	if(!bCheck)
+	if(!bIsInCheck)
 	{
 		moves.push_back(move);
 
-		// todo: I can speed this up by not adding worth when bCheck is false
-		moves.back().worth = GetWorth(move.pFrom->owner);
+		if(bCheck)
+		{
+			moves.back().worth = GetWorth(move.pFrom->owner);
+		}
 	}
 }
 
@@ -484,6 +491,17 @@ bool Board::IsInCheck(int playerID)
 	});
 
 	return iter != moves.end();
+}
+
+bool Board::IsInCheckmate(int playerID)
+{
+	bool bCheckmate = false;
+	if(IsInCheck(playerID))
+	{
+		std::vector<BoardMove> moves = GetMoves(playerID, false);
+		bCheckmate = moves.empty();
+	}
+	return bCheckmate;
 }
 
 void Board::Clear()

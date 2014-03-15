@@ -25,12 +25,25 @@ struct BoardMove
 	{
 	}
 
+	// Starting position of the piece movement
 	ivec2 from;
+
+	// Tile that the piece is moving to
 	ivec2 to;
+
+	// Piece that is moving
 	BoardPiece* pFrom;
+
+	// Piece that is being attacked, else it points to nothing
 	BoardPiece* pTo;
+
+	// Promotion type if the moving piece is a pawn
 	int promotion;
+
+	// Specifies what kind of move is being made
 	SpecialMove specialMove;
+
+	// The value of the game state to the owner after piece movement
 	float worth;
 };
 
