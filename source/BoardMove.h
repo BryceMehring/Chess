@@ -42,9 +42,6 @@ struct BoardMove
 
 	// Specifies what kind of move is being made
 	SpecialMove specialMove;
-
-	// The value of the game state to the owner after piece movement
-	float worth;
 };
 
 std::ostream& operator<<(std::ostream& stream, const BoardMove& move);

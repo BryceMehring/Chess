@@ -4,9 +4,13 @@
 #include <algorithm>
 #include <cassert>
 #include <cfloat>
+#include <thread>
+#include <functional>
+#include <future>
 
 using std::cout;
 using std::endl;
+using namespace std::placeholders;
 
 AI::AI(Connection* conn) : BaseAI(conn), m_totalTime(0), m_count(1) {}
 
@@ -49,10 +53,16 @@ bool AI::run()
 
 	if(!userMoves.empty())
 	{
-		//std::uniform_int_distribution<unsigned int> distribution(0,userMoves.size() - 1);
-		//unsigned int iRandomPiece = distribution(m_generator);
+		auto otherThread = [&](std::promise<unsigned int>&& prom) { MiniMax(std::move(prom)); };
 
-		unsigned int index = MiniMax();
+		std::promise<unsigned int> prom;
+		auto fut = prom.get_future();
+
+		std::thread miniMaxThread(otherThread, std::move(prom));
+		miniMaxThread.join();
+
+		unsigned int index = fut.get();
+
 		Piece* pPiece = &m_board.GetPiece(userMoves[index].from)->piece;
 
 #ifdef DEBUG_OUTPUT
@@ -90,11 +100,24 @@ void AI::end()
 
 }
 
-unsigned int AI::MiniMax()
+void AI::MiniMax(std::promise<unsigned int>&& prom)
 {
-	unsigned int index = 0;
-	float value = MiniMax(3,0, playerID(),true,index);
-	return index;
+	unsigned int index = -1;
+	float value = 0.0f;
+	for(int i = 1; i <= 3; ++i)
+	{
+		unsigned int iNewIndex = 0;
+		float fNewValue = MiniMax(i,0, playerID(),true,iNewIndex);
+
+		if(fNewValue > value)
+		{
+			index = iNewIndex;
+			fNewValue = value;
+		}
+	}
+
+	assert(index != -1);
+	prom.set_value(index);
 }
 
 float AI::MiniMax(int depth, float worth, int playerID, bool bMax, unsigned int& index)
@@ -109,22 +132,22 @@ float AI::MiniMax(int depth, float worth, int playerID, bool bMax, unsigned int&
 		ApplyMove theMove(&userMoves[i], &m_board);
 
 		unsigned int unusedIndex;
-		float fMiniMaxValue = MiniMax(depth - 1, userMoves[i].worth, !playerID, !bMax, unusedIndex);
+		float fMiniMaxValue = MiniMax(depth - 1, m_board.GetWorth(playerID), !playerID, !bMax, unusedIndex);
 
 		if(bMax)
 		{
 			if(fMiniMaxValue > value)
 			{
-				value = fMiniMaxValue;
 				index = i;
+				value = fMiniMaxValue;
 			}
 		}
 		else
 		{
 			if(fMiniMaxValue < value)
 			{
-				value = fMiniMaxValue;
 				index = i;
+				value = fMiniMaxValue;
 			}
 		}
 	}

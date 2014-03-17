@@ -490,7 +490,6 @@ void Board::AddMove(const BoardMove& move, bool bCheck, std::vector<BoardMove>& 
 		if(!IsInCheck(move.pFrom->owner))
 		{
 			moves.push_back(move);
-			moves.back().worth = GetWorth(move.pFrom->owner);
 		}
 	}
 	else

@@ -5,6 +5,7 @@
 #include "Board.h"
 #include <iostream>
 #include <random>
+#include <future>
 
 ///The class implementing gameplay logic.
 class AI: public BaseAI
@@ -19,7 +20,7 @@ public:
 
 private:
 
-  unsigned int MiniMax();
+  void MiniMax(std::promise<unsigned int>&& prom);
   float MiniMax(int depth, float worth, int playerID, bool bMax, unsigned int& index);
   void DrawBoard() const;
 

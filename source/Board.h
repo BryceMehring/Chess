@@ -60,9 +60,10 @@ public:
 	BoardPiece* GetPiece(const ivec2& pos);
 	const BoardPiece* GetPiece(const ivec2& pos) const;
 
-private:
-
+	// Returns the value of the game state for the owner
 	float GetWorth(int playerID);
+
+private:
 
 	std::vector<BoardMove> GetMoves(int playerID, bool bCheck);
 
