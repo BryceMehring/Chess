@@ -30,6 +30,10 @@ ApplyMove::ApplyMove(const BoardMove* pMove, Board* pBoard) : m_pMove(pMove), m_
 		m_oldKingPos = pBoard->m_kingPos[pMove->pFrom->owner];
 		pBoard->m_kingPos[pMove->pFrom->owner] = pMove->to;
 	}
+	else if(m_pMove->specialMove == SpecialMove::Promotion)
+	{
+		m_pMove->pFrom->type = m_pMove->promotion;
+	}
 }
 
 ApplyMove::~ApplyMove()
@@ -39,6 +43,10 @@ ApplyMove::~ApplyMove()
 	if(m_pMove->pFrom->type == 'K')
 	{
 		m_pBoard->m_kingPos[m_pMove->pFrom->owner] = m_oldKingPos;
+	}
+	else if(m_pMove->specialMove == SpecialMove::Promotion)
+	{
+		m_pMove->pFrom->type = m_pMove->pFrom->piece.type();
 	}
 
 	m_pBoard->m_board[m_pMove->from.x - 1][m_pMove->from.y - 1] = m_oldIndex;
@@ -92,7 +100,12 @@ std::vector<BoardMove> Board::GetMoves(int playerID)
 float Board::GetWorth(int playerID)
 {
 	if(IsInCheckmate(!playerID))
-		return 10000.0f;
+		return 1000.0f;
+
+	if(m_LastMove.specialMove == SpecialMove::Promotion)
+		return 50.0f;
+
+	std::vector<BoardMove> moves = GetMoves(playerID, false);
 
 	float fTotal[2] = {0,0};
 	for(auto iter : m_board)
@@ -120,9 +133,9 @@ float Board::GetWorth(int playerID)
 						}
 						else
 						{
-							fTotal[piece.owner] += scalar*2.0f;
+							fTotal[piece.owner] += scalar*1.2f;
 						}
-						fTotal[piece.owner] += 1.0f;
+						//fTotal[piece.owner] += 1.0f;
 
 						break;
 					}
@@ -131,24 +144,61 @@ float Board::GetWorth(int playerID)
 						break;
 					case 'B':
 						fTotal[piece.owner] += 3.0f;
+						for(auto iter : moves)
+						{
+							if(iter.pFrom->piece.id() == piece.piece.id())
+							{
+								if(iter.pTo != nullptr)
+								{
+									fTotal[piece.owner] += 2.6f;
+								}
+								else
+								{
+									fTotal[piece.owner] += 0.3f;
+								}
+							}
+						}
+						//fTotal[piece.owner] += 3.0f;
 						break;
 					case 'R':
-						fTotal[piece.owner] += 6.0f;
-						if(piece.owner == 1)
+						fTotal[piece.owner] += 5.0f;
+
+						for(auto iter : moves)
 						{
-							fTotal[piece.owner] += piece.rank;
-						}
-						else
-						{
-							fTotal[piece.owner] += (8 - piece.rank);
+							if(iter.pFrom->piece.id() == piece.piece.id())
+							{
+								if(iter.pTo != nullptr)
+								{
+									fTotal[piece.owner] += 2.5f;
+								}
+								else
+								{
+									fTotal[piece.owner] += 0.3f;
+								}
+							}
 						}
 
 						break;
 					case 'Q':
 						fTotal[piece.owner] += 9.0f;
+						for(auto iter : moves)
+						{
+							if(iter.pFrom->piece.id() == piece.piece.id())
+							{
+								if(iter.pTo != nullptr)
+								{
+									fTotal[piece.owner] += 2.5f;
+								}
+								else
+								{
+									fTotal[piece.owner] += 0.3f;
+								}
+							}
+						}
+						//fTotal[piece.owner] += 15.0f;
 						break;
 					case 'K':
-						fTotal[piece.owner] += 50.0f;
+						//fTotal[piece.owner] += 20.0f;
 						break;
 					default:
 						assert("Invalid piece type" && false);
@@ -158,7 +208,7 @@ float Board::GetWorth(int playerID)
 		}
 	}
 
-	return 2.0f*fTotal[playerID] / (fTotal[!playerID]);
+	return fTotal[playerID] / (fTotal[!playerID]);
 }
 
 BoardPiece* Board::GetPiece(const ivec2 &pos)
@@ -433,21 +483,19 @@ void Board::GenerateCastleMove(const BoardPiece& piece, bool bCheck, std::vector
 
 void Board::AddMove(const BoardMove& move, bool bCheck, std::vector<BoardMove>& moves)
 {
-	ApplyMove triedMove(&move, this);
-	bool bIsInCheck = false;
 	if(bCheck)
 	{
-		bIsInCheck = IsInCheck(move.pFrom->owner);
-	}
+		ApplyMove triedMove(&move, this);
 
-	if(!bIsInCheck)
-	{
-		moves.push_back(move);
-
-		if(bCheck)
+		if(!IsInCheck(move.pFrom->owner))
 		{
+			moves.push_back(move);
 			moves.back().worth = GetWorth(move.pFrom->owner);
 		}
+	}
+	else
+	{
+		moves.push_back(move);
 	}
 }
 
