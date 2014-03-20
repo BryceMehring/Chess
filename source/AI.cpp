@@ -4,9 +4,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cfloat>
-#include <thread>
 #include <functional>
-#include <future>
 
 using std::cout;
 using std::endl;
@@ -53,15 +51,7 @@ bool AI::run()
 
 	if(!userMoves.empty())
 	{
-		auto otherThread = [&](std::promise<unsigned int>&& prom) { MiniMax(std::move(prom)); };
-
-		std::promise<unsigned int> prom;
-		auto fut = prom.get_future();
-
-		std::thread miniMaxThread(otherThread, std::move(prom));
-		miniMaxThread.join();
-
-		unsigned int index = fut.get();
+		unsigned int index = MiniMax();
 
 		Piece* pPiece = &m_board.GetPiece(userMoves[index].from)->piece;
 
@@ -100,7 +90,7 @@ void AI::end()
 
 }
 
-void AI::MiniMax(std::promise<unsigned int>&& prom)
+unsigned int AI::MiniMax()
 {
 	unsigned int index = -1;
 	float value = 0.0f;
@@ -116,8 +106,7 @@ void AI::MiniMax(std::promise<unsigned int>&& prom)
 		}
 	}
 
-	assert(index != -1);
-	prom.set_value(index);
+	return index;
 }
 
 float AI::MiniMax(int depth, float worth, int playerID, bool bMax, unsigned int& index)
