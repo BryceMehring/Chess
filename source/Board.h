@@ -61,7 +61,19 @@ public:
 	const BoardPiece* GetPiece(const ivec2& pos) const;
 
 	// Returns the value of the game state for the owner
-	float GetWorth(int playerID);
+	float GetWorth(int playerID, const std::function<float(const Board&, const std::vector<BoardMove>&, const BoardPiece&)>& heuristic);
+
+	// Returns true if pos is on the board
+	bool IsOnBoard(int pos) const;
+
+	// Returns true if pos is on the board
+	bool IsOnBoard(const ivec2& pos) const;
+
+	// Returns true if the current tile is empty
+	bool IsTileEmpty(int file, int rank) const;
+
+	// Returns true if we currently own the tile
+	bool IsTileOwner(int file, int rank, int playerID) const;
 
 private:
 
@@ -84,18 +96,6 @@ private:
 
 	// Adds a move to the move list only if after applying the move, it does not put us in check, or if bCheck is false
 	void AddMove(const BoardMove& move, bool bCheck, std::vector<BoardMove>& moves);
-
-	// Returns true if pos is on the board
-	bool IsOnBoard(int pos) const;
-
-	// Returns true if pos is on the board
-	bool IsOnBoard(const ivec2& pos) const;
-
-	// Returns true if the current tile is empty
-	bool IsTileEmpty(int file, int rank) const;
-
-	// Returns true if we currently own the tile
-	bool IsTileOwner(int file, int rank, int playerID) const;
 
 	// Returns true if the current state of the board is in check
 	bool IsInCheck(int playerID);

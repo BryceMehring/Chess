@@ -97,7 +97,7 @@ std::vector<BoardMove> Board::GetMoves(int playerID)
 	return GetMoves(playerID, true);
 }
 
-float Board::GetWorth(int playerID)
+float Board::GetWorth(int playerID, const std::function<float(const Board& board, const std::vector<BoardMove>&, const BoardPiece&)>& heuristic)
 {
 	if(IsInCheckmate(!playerID))
 		return 1000.0f;
@@ -117,98 +117,12 @@ float Board::GetWorth(int playerID)
 			{
 				const BoardPiece& piece = iter->second;
 
-				switch(piece.type)
-				{
-					case 'P':
-					{
-						float scalar = 1.0f;
-						if(piece.rank >= 3 && piece.rank <= 6)
-						{
-							scalar = 2.0f;
-						}
-
-						if(!IsTileEmpty(piece.file, piece.rank + (piece.owner == 1 ? 1 : -1)))
-						{
-							fTotal[piece.owner] += scalar*0.5f;
-						}
-						else
-						{
-							fTotal[piece.owner] += scalar*1.2f;
-						}
-						//fTotal[piece.owner] += 1.0f;
-
-						break;
-					}
-					case 'N':
-						fTotal[piece.owner] += 3.0f;
-						break;
-					case 'B':
-						fTotal[piece.owner] += 3.0f;
-						for(auto iter : moves)
-						{
-							if(iter.pFrom->piece.id() == piece.piece.id())
-							{
-								if(iter.pTo != nullptr)
-								{
-									fTotal[piece.owner] += 2.6f;
-								}
-								else
-								{
-									fTotal[piece.owner] += 0.3f;
-								}
-							}
-						}
-						//fTotal[piece.owner] += 3.0f;
-						break;
-					case 'R':
-						fTotal[piece.owner] += 5.0f;
-
-						for(auto iter : moves)
-						{
-							if(iter.pFrom->piece.id() == piece.piece.id())
-							{
-								if(iter.pTo != nullptr)
-								{
-									fTotal[piece.owner] += 2.5f;
-								}
-								else
-								{
-									fTotal[piece.owner] += 0.3f;
-								}
-							}
-						}
-
-						break;
-					case 'Q':
-						fTotal[piece.owner] += 9.0f;
-						for(auto iter : moves)
-						{
-							if(iter.pFrom->piece.id() == piece.piece.id())
-							{
-								if(iter.pTo != nullptr)
-								{
-									fTotal[piece.owner] += 2.5f;
-								}
-								else
-								{
-									fTotal[piece.owner] += 0.3f;
-								}
-							}
-						}
-						//fTotal[piece.owner] += 15.0f;
-						break;
-					case 'K':
-						//fTotal[piece.owner] += 20.0f;
-						break;
-					default:
-						assert("Invalid piece type" && false);
-						break;
-				}
+				fTotal[piece.owner] += heuristic(*this, moves, piece);
 			}
 		}
 	}
 
-	return fTotal[playerID] / (fTotal[!playerID]);
+	return fTotal[playerID] - (fTotal[!playerID]);
 }
 
 BoardPiece* Board::GetPiece(const ivec2 &pos)

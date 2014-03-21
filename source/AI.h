@@ -10,7 +10,7 @@
 class AI: public BaseAI
 {
 public:
-  AI(Connection* c);
+  AI(Connection* c, unsigned int depth);
   virtual const char* username();
   virtual const char* password();
   virtual void init();
@@ -27,6 +27,7 @@ private:
   std::random_device m_generator;
   std::uint64_t m_totalTime;
   unsigned int m_count;
+  unsigned int m_depth;
 };
 
 #endif

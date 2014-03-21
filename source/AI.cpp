@@ -1,5 +1,6 @@
 #include "AI.h"
 #include "Timer.h"
+#include "Heuristics.h"
 
 #include <algorithm>
 #include <cassert>
@@ -10,7 +11,7 @@ using std::cout;
 using std::endl;
 using namespace std::placeholders;
 
-AI::AI(Connection* conn) : BaseAI(conn), m_totalTime(0), m_count(1) {}
+AI::AI(Connection* conn, unsigned int depth) : BaseAI(conn), m_totalTime(0), m_count(1), m_depth(depth) {}
 
 const char* AI::username()
 {
@@ -93,17 +94,13 @@ void AI::end()
 unsigned int AI::MiniMax()
 {
 	unsigned int index = -1;
-	float value = 0.0f;
+	cout << "Minimax woth " << endl;
 	for(int i = 1; i <= 3; ++i)
 	{
-		unsigned int iNewIndex = 0;
-		float fNewValue = MiniMax(i,0, playerID(),true,iNewIndex);
+		float worth = MiniMax(m_depth,0, playerID(),true,index);
 
-		if(fNewValue > value)
-		{
-			index = iNewIndex;
-			fNewValue = value;
-		}
+		cout << "Depth " << i << " ";
+		cout << worth << endl;
 	}
 
 	return index;
@@ -121,7 +118,7 @@ float AI::MiniMax(int depth, float worth, int playerID, bool bMax, unsigned int&
 		ApplyMove theMove(&userMoves[i], &m_board);
 
 		unsigned int unusedIndex;
-		float fMiniMaxValue = MiniMax(depth - 1, m_board.GetWorth(playerID), !playerID, !bMax, unusedIndex);
+		float fMiniMaxValue = MiniMax(depth - 1, m_board.GetWorth(playerID, ChessHeuristic()), !playerID, !bMax, unusedIndex);
 
 		if(bMax)
 		{

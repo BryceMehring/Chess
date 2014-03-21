@@ -14,16 +14,21 @@ using namespace std;
 
 int main(int argc, char** argv)
 {
-
   if(argc < 2)
   {
     cout<<"Please enter a host name."<<endl;
     return 1;
   }
 
+  unsigned int depth = 3;
+  if(argc > 3)
+  {
+	depth = atoi(argv[3]);
+  }
+
   Connection* c;
   c = createConnection();
-  AI ai(c);
+  AI ai(c,depth);
   if(!serverConnect(c, argv[1], "19000"))
   {
     cerr << "Unable to connect to server" << endl;
