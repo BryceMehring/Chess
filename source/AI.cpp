@@ -99,7 +99,7 @@ unsigned int AI::MiniMax()
 	{
 		float worth = MiniMax(i,0, playerID(),true,index);
 
-		cout << "Depth " << m_depth << " ";
+		cout << "Depth " << i << " ";
 		cout << worth << endl;
 	}
 

@@ -483,7 +483,7 @@ bool Board::IsInStalemate(int playerID)
 	// king against king and bishop;
 	// king against king and knight;
 	// king and bishop against king and bishop, with both bishops on squares of the same color
-	int counters[2] = {0}; // bishop, knight
+	int counters[2][2] = {0}; // bishop, knight
 
 	for(auto iter : m_board)
 	{
@@ -496,11 +496,11 @@ bool Board::IsInStalemate(int playerID)
 
 				if(piece.type == 'B')
 				{
-					counters[0]++;
+					counters[piece.owner][0]++;
 				}
 				else if(piece.type == 'N')
 				{
-					counters[1]++;
+					counters[piece.owner][1]++;
 				}
 				else if(piece.type != 'K')
 				{
@@ -510,16 +510,20 @@ bool Board::IsInStalemate(int playerID)
 		}
 	}
 
+	bool bOnlyKing[2] = {(counters[0][0] == 0 && counters[0][1] == 0), (counters[1][0] == 0 && counters[1][1] == 0)};
+
 	// king against king
-	if(counters[0] == 0 && counters[1] == 0)
+	if(bOnlyKing[0] && bOnlyKing[1])
 		return true;
 
 	// king against king and bishop
-	if(counters[0] == 1 && counters[1] == 0)
+	if((bOnlyKing[0] && counters[1][1] == 0 && counters[1][0] == 1) ||
+	   (bOnlyKing[1] && counters[0][1] == 0 && counters[0][0] == 1))
 		return true;
 
 	// king against king and knight
-	if(counters[0] == 0 && counters[1] == 1)
+	if((bOnlyKing[0] && counters[1][1] == 1 && counters[1][0] == 0) ||
+	   (bOnlyKing[1] && counters[0][1] == 1 && counters[0][0] == 0))
 		return true;
 
 	return false;
