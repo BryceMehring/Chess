@@ -41,13 +41,7 @@ bool AI::run()
 	DrawBoard();
 #endif
 
-	Move* pPreviousMove = nullptr;
-	if(!moves.empty())
-	{
-		pPreviousMove = &moves[0];
-	}
-
-	m_board.Update(pPreviousMove, pieces);
+	m_board.Update(moves, pieces);
 	std::vector<BoardMove> userMoves = m_board.GetMoves(playerID());
 
 	if(!userMoves.empty())

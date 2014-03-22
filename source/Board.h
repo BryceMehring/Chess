@@ -6,6 +6,7 @@
 #include "vec2.h"
 #include "BoardMove.h"
 #include <unordered_map>
+#include <deque>
 #include <functional>
 
 #include <vector>
@@ -51,7 +52,7 @@ public:
 	Board();
 
 	// Updates the grid and returns all valid moves
-	void Update(const Move* pLastMove, std::vector<Piece>& pieces);
+	void Update(const std::vector<Move>& moves, const std::vector<Piece>& pieces);
 
 	std::vector<BoardMove> GetMoves(int playerID);
 
@@ -111,6 +112,8 @@ private:
 
 	std::vector<std::vector<int>> m_board;
 	std::unordered_map<int,BoardPiece> m_pieces;
+
+	std::deque<BoardMove> m_moveHistory;
 
 	ivec2 m_kingPos[2];
 	BoardMove m_LastMove;

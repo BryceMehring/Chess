@@ -10,6 +10,9 @@ using std::endl;
 ApplyMove::ApplyMove(const BoardMove* pMove, Board* pBoard) : m_pMove(pMove), m_pBoard(pBoard)
 {
 	// todo: clean up this code
+
+	pBoard->m_moveHistory.push_front(*pMove);
+
 	m_oldIndex = pBoard->m_board[pMove->from.x - 1][pMove->from.y - 1];
 	m_newIndex = pBoard->m_board[pMove->to.x - 1][pMove->to.y - 1];
 
@@ -40,6 +43,8 @@ ApplyMove::~ApplyMove()
 {
 	// todo: clean up this code
 
+	m_pBoard->m_moveHistory.pop_front();
+
 	if(m_pMove->pFrom->type == 'K')
 	{
 		m_pBoard->m_kingPos[m_pMove->pFrom->owner] = m_oldKingPos;
@@ -69,13 +74,13 @@ Board::Board()
 	}
 }
 
-void Board::Update(const Move* pLastMove, std::vector<Piece>& pieces)
+void Board::Update(const std::vector<Move>& moves, const std::vector<Piece>& pieces)
 {
 	// Clear the old board
 	Clear();
 
 	// Fill new board with pieces
-	for(Piece& p : pieces)
+	for(const Piece& p : pieces)
 	{
 		if(p.type() == 'K')
 		{
@@ -86,9 +91,16 @@ void Board::Update(const Move* pLastMove, std::vector<Piece>& pieces)
 		m_pieces.insert({p.id(), {p, p.owner(), p.file(), p.rank(), p.hasMoved(), p.type()}});
 	}
 
-	if(pLastMove != nullptr)
+	if(!moves.empty())
 	{
-		m_LastMove = {{pLastMove->fromFile(), pLastMove->fromRank()}, {pLastMove->toFile(), pLastMove->toRank()}};
+		m_LastMove = {{moves[0].fromFile(), moves[0].fromRank()}, {moves[0].toFile(), moves[0].toRank()}};
+
+		// todo: this copy could be avoided
+		m_moveHistory.clear();
+		for(auto iter : moves)
+		{
+			m_moveHistory.push_back({{iter.fromFile(), iter.fromRank()}, {iter.toFile(), iter.toRank()}});
+		}
 	}
 }
 
@@ -506,7 +518,7 @@ bool Board::IsInStalemate(int playerID)
 				}
 				else if(piece.type != 'K')
 				{
-					return false;
+					break;
 				}
 			}
 		}
@@ -534,6 +546,18 @@ bool Board::IsInStalemate(int playerID)
 	{
 		if((bishopPos[0].x + bishopPos[0].y) % 2 == (bishopPos[1].x + bishopPos[1].y) % 2)
 			return true;
+	}
+
+	// Test 3: three board state repetition draw rule
+	if(m_moveHistory.size() >= 8)
+	{
+		bool bEqual = std::equal(m_moveHistory.begin(), m_moveHistory.begin() + 4, m_moveHistory.begin() + 4, [](const BoardMove& a, const BoardMove& b) -> bool
+		{
+			return (a.from == b.from && a.to == b.to);
+		});
+
+		if(bEqual)
+			return bEqual;
 	}
 
 	return false;
