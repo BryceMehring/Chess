@@ -109,16 +109,13 @@ std::vector<BoardMove> Board::GetMoves(int playerID)
 	return GetMoves(playerID, true);
 }
 
-float Board::GetWorth(int playerID, const std::function<float(const Board& board, const std::vector<BoardMove>&, const BoardPiece&)>& heuristic)
+float Board::GetWorth(int playerID, int turnsToStalemate, const std::function<float(const Board& board, const std::vector<BoardMove>&, const BoardPiece&)>& heuristic)
 {
 	if(IsInCheckmate(!playerID))
-		return 10000.0f;
+		return 1000.0f;
 
-	if(IsInStalemate(playerID))
-		return -10000.0f;
-
-	/*if(m_LastMove.specialMove == SpecialMove::Promotion)
-		return 50.0f;*/
+	if(IsInStalemate(playerID, turnsToStalemate))
+		return -500.0f;
 
 	std::vector<BoardMove> moves = GetMoves(playerID, false);
 
@@ -137,7 +134,7 @@ float Board::GetWorth(int playerID, const std::function<float(const Board& board
 		}
 	}
 
-	return fTotal[playerID] - fTotal[!playerID];
+	return fTotal[playerID] / fTotal[!playerID];
 }
 
 BoardPiece* Board::GetPiece(const ivec2 &pos)
@@ -480,9 +477,9 @@ bool Board::IsInCheckmate(int playerID)
 	return bCheckmate;
 }
 
-bool Board::IsInStalemate(int playerID)
+bool Board::IsInStalemate(int playerID, int turnsToStalemate)
 {
-	return IsNoLegalMovesStalemate(playerID) || IsNotEnoughPiecesStalemate() || IsThreeBoardStateStalemate();
+	return IsThreeBoardStateStalemate(turnsToStalemate) || IsNoLegalMovesStalemate(playerID) || IsNotEnoughPiecesStalemate();
 }
 
 bool Board::IsNoLegalMovesStalemate(int playerID)
@@ -563,12 +560,12 @@ bool Board::IsNotEnoughPiecesStalemate() const
 	return false;
 }
 
-bool Board::IsThreeBoardStateStalemate() const
+bool Board::IsThreeBoardStateStalemate(int turnsToStalemate) const
 {
 	// todo: this could be optimized
 
 	// Test 3: three board state repetition draw rule
-	if(m_moveHistory.size() >= 8)
+	if(turnsToStalemate <= 92 && m_moveHistory.size() >= 8)
 	{
 		auto equalFunctor = [](const BoardMove& a, const BoardMove& b) -> bool
 		{

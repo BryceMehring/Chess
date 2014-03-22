@@ -62,7 +62,7 @@ public:
 	const BoardPiece* GetPiece(const ivec2& pos) const;
 
 	// Returns the value of the game state for the owner
-	float GetWorth(int playerID, const std::function<float(const Board&, const std::vector<BoardMove>&, const BoardPiece&)>& heuristic);
+	float GetWorth(int playerID, int turnsToStalemate, const std::function<float(const Board&, const std::vector<BoardMove>&, const BoardPiece&)>& heuristic);
 
 	// Returns true if pos is on the board
 	bool IsOnBoard(int pos) const;
@@ -101,15 +101,20 @@ private:
 	// Returns true if the current state of the board is in check
 	bool IsInCheck(int playerID);
 
+	// Returns true if the specified player is in checkmate
 	bool IsInCheckmate(int playerID);
 
-	bool IsInStalemate(int playerID);
+	// Returns true if the specified player is in stalemate
+	bool IsInStalemate(int playerID, int turnsToStalemate);
 
+	// Returns true if there are no legal moves for the specified player
 	bool IsNoLegalMovesStalemate(int playerID);
 
+	// Returns true if there is not enough pieces on the board
 	bool IsNotEnoughPiecesStalemate() const;
 
-	bool IsThreeBoardStateStalemate() const;
+	// Returns true if there is a three board repatition stalemate condition
+	bool IsThreeBoardStateStalemate(int turnsToStalemate) const;
 
 	// Clears the board
 	void Clear();
