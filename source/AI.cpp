@@ -95,11 +95,11 @@ unsigned int AI::MiniMax()
 {
 	unsigned int index = -1;
 	cout << "Minimax woth " << endl;
-	for(int i = 1; i <= 3; ++i)
+	for(unsigned int i = 1; i <= m_depth; ++i)
 	{
-		float worth = MiniMax(m_depth,0, playerID(),true,index);
+		float worth = MiniMax(i,0, playerID(),true,index);
 
-		cout << "Depth " << i << " ";
+		cout << "Depth " << m_depth << " ";
 		cout << worth << endl;
 	}
 
@@ -112,13 +112,13 @@ float AI::MiniMax(int depth, float worth, int playerID, bool bMax, unsigned int&
 		return worth;
 
 	float value = bMax ? -FLT_MAX : FLT_MAX;
-	std::vector<BoardMove> userMoves =  m_board.GetMoves(playerID);
+	std::vector<BoardMove> userMoves =  m_board.GetMoves(bMax ? playerID : !playerID);
 	for(unsigned int i = 0; i < userMoves.size(); ++i)
 	{
 		ApplyMove theMove(&userMoves[i], &m_board);
 
 		unsigned int unusedIndex;
-		float fMiniMaxValue = MiniMax(depth - 1, m_board.GetWorth(playerID, ChessHeuristic()), !playerID, !bMax, unusedIndex);
+		float fMiniMaxValue = MiniMax(depth - 1, m_board.GetWorth(playerID, ChessHeuristic()), playerID, !bMax, unusedIndex);
 
 		if(bMax)
 		{

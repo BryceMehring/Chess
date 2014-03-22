@@ -40,7 +40,7 @@ float ChessHeuristic::operator ()(const Board& board, const std::vector<BoardMov
 					}
 					else
 					{
-						worth += 0.3f;
+						worth += 0.1f;
 					}
 				}
 			}
@@ -58,7 +58,7 @@ float ChessHeuristic::operator ()(const Board& board, const std::vector<BoardMov
 					}
 					else
 					{
-						worth += 0.3f;
+						worth += 0.1f;
 					}
 				}
 			}
@@ -76,13 +76,10 @@ float ChessHeuristic::operator ()(const Board& board, const std::vector<BoardMov
 					}
 					else
 					{
-						worth += 0.3f;
+						worth += 0.1f;
 					}
 				}
 			}
-			break;
-		case 'K':
-			//fTotal[piece.owner] += 20.0f;
 			break;
 		default:
 			assert("Invalid piece type" && false);

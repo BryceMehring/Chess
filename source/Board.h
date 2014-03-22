@@ -102,6 +102,8 @@ private:
 
 	bool IsInCheckmate(int playerID);
 
+	bool IsInStalemate(int playerID);
+
 	// Clears the board
 	void Clear();
 

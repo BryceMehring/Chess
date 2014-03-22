@@ -100,10 +100,13 @@ std::vector<BoardMove> Board::GetMoves(int playerID)
 float Board::GetWorth(int playerID, const std::function<float(const Board& board, const std::vector<BoardMove>&, const BoardPiece&)>& heuristic)
 {
 	if(IsInCheckmate(!playerID))
-		return 1000.0f;
+		return 10000.0f;
 
-	if(m_LastMove.specialMove == SpecialMove::Promotion)
-		return 50.0f;
+	if(IsInStalemate(playerID))
+		return -10000.0f;
+
+	/*if(m_LastMove.specialMove == SpecialMove::Promotion)
+		return 50.0f;*/
 
 	std::vector<BoardMove> moves = GetMoves(playerID, false);
 
@@ -463,6 +466,20 @@ bool Board::IsInCheckmate(int playerID)
 		bCheckmate = moves.empty();
 	}
 	return bCheckmate;
+}
+
+bool Board::IsInStalemate(int playerID)
+{
+	bool bIsInStalemate = false;
+
+	// Test 1
+	if(!IsInCheck(playerID))
+	{
+		std::vector<BoardMove> moves = GetMoves(playerID, false);
+		bIsInStalemate = moves.empty();
+	}
+
+	return bIsInStalemate;
 }
 
 void Board::Clear()
