@@ -105,6 +105,12 @@ private:
 
 	bool IsInStalemate(int playerID);
 
+	bool IsNoLegalMovesStalemate(int playerID);
+
+	bool IsNotEnoughPiecesStalemate() const;
+
+	bool IsThreeBoardStateStalemate() const;
+
 	// Clears the board
 	void Clear();
 

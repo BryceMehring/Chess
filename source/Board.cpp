@@ -482,6 +482,11 @@ bool Board::IsInCheckmate(int playerID)
 
 bool Board::IsInStalemate(int playerID)
 {
+	return IsNoLegalMovesStalemate(playerID) || IsNotEnoughPiecesStalemate() || IsThreeBoardStateStalemate();
+}
+
+bool Board::IsNoLegalMovesStalemate(int playerID)
+{
 	// Test 1: The game is automatically a draw if the player to move is not in check but has no legal move.
 	if(!IsInCheck(playerID))
 	{
@@ -489,6 +494,13 @@ bool Board::IsInStalemate(int playerID)
 		if(moves.empty())
 			return true;
 	}
+
+	return false;
+}
+
+bool Board::IsNotEnoughPiecesStalemate() const
+{
+	// todo: cleanup this method
 
 	// Test 2:
 	// king against king;
@@ -518,7 +530,7 @@ bool Board::IsInStalemate(int playerID)
 				}
 				else if(piece.type != 'K')
 				{
-					break;
+					return false;
 				}
 			}
 		}
@@ -548,16 +560,22 @@ bool Board::IsInStalemate(int playerID)
 			return true;
 	}
 
+	return false;
+}
+
+bool Board::IsThreeBoardStateStalemate() const
+{
+	// todo: this could be optimized
+
 	// Test 3: three board state repetition draw rule
 	if(m_moveHistory.size() >= 8)
 	{
-		bool bEqual = std::equal(m_moveHistory.begin(), m_moveHistory.begin() + 4, m_moveHistory.begin() + 4, [](const BoardMove& a, const BoardMove& b) -> bool
+		auto equalFunctor = [](const BoardMove& a, const BoardMove& b) -> bool
 		{
 			return (a.from == b.from && a.to == b.to);
-		});
+		};
 
-		if(bEqual)
-			return bEqual;
+		return std::equal(m_moveHistory.begin(), m_moveHistory.begin() + 4, m_moveHistory.begin() + 4, equalFunctor);
 	}
 
 	return false;

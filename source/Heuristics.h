@@ -4,6 +4,8 @@
 #include "Board.h"
 #include <vector>
 
+// todo: rename this class
+// Defines a state heuristic for a single chess piece
 class ChessHeuristic
 {
 public:
