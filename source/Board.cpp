@@ -125,7 +125,7 @@ float Board::GetWorth(int playerID, const std::function<float(const Board& board
 		}
 	}
 
-	return fTotal[playerID] - (fTotal[!playerID]);
+	return fTotal[playerID] - fTotal[!playerID];
 }
 
 BoardPiece* Board::GetPiece(const ivec2 &pos)
@@ -470,16 +470,59 @@ bool Board::IsInCheckmate(int playerID)
 
 bool Board::IsInStalemate(int playerID)
 {
-	bool bIsInStalemate = false;
-
-	// Test 1
+	// Test 1: The game is automatically a draw if the player to move is not in check but has no legal move.
 	if(!IsInCheck(playerID))
 	{
 		std::vector<BoardMove> moves = GetMoves(playerID, false);
-		bIsInStalemate = moves.empty();
+		if(moves.empty())
+			return true;
 	}
 
-	return bIsInStalemate;
+	// Test 2:
+	// king against king;
+	// king against king and bishop;
+	// king against king and knight;
+	// king and bishop against king and bishop, with both bishops on squares of the same color
+	int counters[2] = {0}; // bishop, knight
+
+	for(auto iter : m_board)
+	{
+		for(auto subIter : iter)
+		{
+			auto iter = m_pieces.find(subIter);
+			if(iter != m_pieces.end())
+			{
+				const BoardPiece& piece = iter->second;
+
+				if(piece.type == 'B')
+				{
+					counters[0]++;
+				}
+				else if(piece.type == 'N')
+				{
+					counters[1]++;
+				}
+				else if(piece.type != 'K')
+				{
+					return false;
+				}
+			}
+		}
+	}
+
+	// king against king
+	if(counters[0] == 0 && counters[1] == 0)
+		return true;
+
+	// king against king and bishop
+	if(counters[0] == 1 && counters[1] == 0)
+		return true;
+
+	// king against king and knight
+	if(counters[0] == 0 && counters[1] == 1)
+		return true;
+
+	return false;
 }
 
 void Board::Clear()
