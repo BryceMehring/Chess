@@ -11,31 +11,44 @@ ApplyMove::ApplyMove(const BoardMove* pMove, Board* pBoard) : m_pMove(pMove), m_
 {
 	// todo: clean up this code
 
-	pBoard->m_moveHistory.push_front(*pMove);
+	m_pBoard->m_moveHistory.push_front(*m_pMove);
 
-	m_oldIndex = pBoard->m_board[pMove->from.x - 1][pMove->from.y - 1];
-	m_newIndex = pBoard->m_board[pMove->to.x - 1][pMove->to.y - 1];
+	m_oldIndex = m_pBoard->m_board[m_pMove->from.x - 1][m_pMove->from.y - 1];
+	m_newIndex = m_pBoard->m_board[m_pMove->to.x - 1][m_pMove->to.y - 1];
 
-	pBoard->m_board[pMove->from.x - 1][pMove->from.y - 1] = 0;
-	pBoard->m_board[pMove->to.x - 1][pMove->to.y - 1] = m_oldIndex;
+	m_pBoard->m_board[m_pMove->from.x - 1][m_pMove->from.y - 1] = 0;
+	m_pBoard->m_board[m_pMove->to.x - 1][m_pMove->to.y - 1] = m_oldIndex;
 
-	m_LastMove = pBoard->m_LastMove;
-	pBoard->m_LastMove = *pMove;
+	m_LastMove = m_pBoard->m_LastMove;
+	m_pBoard->m_LastMove = *m_pMove;
 
-	pMove->pFrom->file = pMove->to.x;
-	pMove->pFrom->rank = pMove->to.y;
+	m_pMove->pFrom->file = m_pMove->to.x;
+	m_pMove->pFrom->rank = m_pMove->to.y;
 
-	m_hasMoved = pMove->pFrom->hasMoved;
-	pMove->pFrom->hasMoved = 1;
+	m_hasMoved = m_pMove->pFrom->hasMoved;
+	m_pMove->pFrom->hasMoved = 1;
 
+	// Keep track of the kings
 	if(m_pMove->pFrom->type == 'K')
 	{
-		m_oldKingPos = pBoard->m_kingPos[pMove->pFrom->owner];
-		pBoard->m_kingPos[pMove->pFrom->owner] = pMove->to;
+		m_oldKingPos = m_pBoard->m_kingPos[m_pMove->pFrom->owner];
+		m_pBoard->m_kingPos[m_pMove->pFrom->owner] = m_pMove->to;
 	}
+	// Promotion logic
 	else if(m_pMove->specialMove == SpecialMove::Promotion)
 	{
 		m_pMove->pFrom->type = m_pMove->promotion;
+	}
+
+	// Turns left for stalemate logic
+	if(m_pMove->pTo == nullptr && m_pMove->pFrom->type != 'P')
+	{
+		m_pBoard->m_turnsToStalemate--;
+	}
+	else
+	{
+		m_oldTurnsToStalemate = m_pBoard->m_turnsToStalemate;
+		m_pBoard->m_turnsToStalemate = 100;
 	}
 }
 
@@ -45,13 +58,25 @@ ApplyMove::~ApplyMove()
 
 	m_pBoard->m_moveHistory.pop_front();
 
+	// Keep track of the kings
 	if(m_pMove->pFrom->type == 'K')
 	{
 		m_pBoard->m_kingPos[m_pMove->pFrom->owner] = m_oldKingPos;
 	}
+	// Promotion logic
 	else if(m_pMove->specialMove == SpecialMove::Promotion)
 	{
 		m_pMove->pFrom->type = m_pMove->pFrom->piece.type();
+	}
+
+	// Turns left for stalemate logic
+	if(m_pMove->pTo == nullptr && m_pMove->pFrom->type != 'P')
+	{
+		m_pBoard->m_turnsToStalemate++;
+	}
+	else
+	{
+		m_pBoard->m_turnsToStalemate = m_oldTurnsToStalemate;
 	}
 
 	m_pBoard->m_board[m_pMove->from.x - 1][m_pMove->from.y - 1] = m_oldIndex;
@@ -64,7 +89,7 @@ ApplyMove::~ApplyMove()
 	m_pMove->pFrom->hasMoved = m_hasMoved;
 }
 
-Board::Board()
+Board::Board() : m_turnsToStalemate(0)
 {
 	m_board.resize(8);
 
@@ -74,7 +99,7 @@ Board::Board()
 	}
 }
 
-void Board::Update(const std::vector<Move>& moves, const std::vector<Piece>& pieces)
+void Board::Update(int turnsToStalemate, const std::vector<Move>& moves, const std::vector<Piece>& pieces)
 {
 	// Clear the old board
 	Clear();
@@ -102,6 +127,8 @@ void Board::Update(const std::vector<Move>& moves, const std::vector<Piece>& pie
 			m_moveHistory.push_back({{iter.fromFile(), iter.fromRank()}, {iter.toFile(), iter.toRank()}});
 		}
 	}
+
+	m_turnsToStalemate = turnsToStalemate;
 }
 
 std::vector<BoardMove> Board::GetMoves(int playerID)
@@ -109,10 +136,14 @@ std::vector<BoardMove> Board::GetMoves(int playerID)
 	return GetMoves(playerID, true);
 }
 
-float Board::GetWorth(int playerID, int turnsToStalemate, const std::function<float(const Board& board, const std::vector<BoardMove>&, const BoardPiece&)>& heuristic)
+float Board::GetWorth(int playerID, const std::function<float(const Board& board, const std::vector<BoardMove>&, const BoardPiece&)>& heuristic)
 {
 	if(IsInCheckmate(!playerID))
-		return 1000.0f;
+		return 10000.0f;
+
+	// todo: this line might need some changing because a stalemate is bad not only for max, but also for min
+	if(IsInStalemate(playerID))
+		return -10000.0f;
 
 	std::vector<BoardMove> moves = GetMoves(playerID, false);
 
@@ -131,7 +162,17 @@ float Board::GetWorth(int playerID, int turnsToStalemate, const std::function<fl
 		}
 	}
 
-	float stalemateScalar = IsInStalemate(playerID, turnsToStalemate) ? 0.5f : 5.5f;
+	float stalemateScalar = 1.0f;
+
+	if(m_turnsToStalemate > 50)
+	{
+		stalemateScalar = 5.5f;
+	}
+	else if(m_LastMove.pTo == nullptr || m_LastMove.pFrom->type != 'P')
+	{
+		stalemateScalar = 0.5f;
+	}
+
 	return stalemateScalar*fTotal[playerID] / fTotal[!playerID];
 }
 
@@ -475,9 +516,9 @@ bool Board::IsInCheckmate(int playerID)
 	return bCheckmate;
 }
 
-bool Board::IsInStalemate(int playerID, int turnsToStalemate)
+bool Board::IsInStalemate(int playerID)
 {
-	return IsThreeBoardStateStalemate(turnsToStalemate) || IsNoLegalMovesStalemate(playerID) || IsNotEnoughPiecesStalemate();
+	return IsThreeBoardStateStalemate() || IsNoLegalMovesStalemate(playerID) || IsNotEnoughPiecesStalemate();
 }
 
 bool Board::IsNoLegalMovesStalemate(int playerID)
@@ -558,19 +599,28 @@ bool Board::IsNotEnoughPiecesStalemate() const
 	return false;
 }
 
-bool Board::IsThreeBoardStateStalemate(int turnsToStalemate) const
+bool Board::IsThreeBoardStateStalemate() const
 {
 	// todo: this could be optimized
 
 	// Test 3: three board state repetition draw rule
-	if(turnsToStalemate <= 92 && m_moveHistory.size() >= 8)
+	if(m_turnsToStalemate <= 92 && m_moveHistory.size() >= 8)
 	{
 		auto equalFunctor = [](const BoardMove& a, const BoardMove& b) -> bool
 		{
 			return (a.from == b.from && a.to == b.to);
 		};
 
-		return std::equal(m_moveHistory.begin(), m_moveHistory.begin() + 4, m_moveHistory.begin() + 4, equalFunctor);
+		bool bEqual = std::equal(m_moveHistory.begin(), m_moveHistory.begin() + 4, m_moveHistory.begin() + 4, equalFunctor);
+
+#ifdef DEBUG_OUTPUT
+		if(bEqual)
+		{
+			cout << "Three board state stalemate detected!" << endl;
+		}
+#endif
+
+		return bEqual;
 	}
 
 	return false;

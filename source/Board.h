@@ -37,6 +37,7 @@ private:
 	int m_oldIndex;
 	int m_newIndex;
 	int m_hasMoved;
+	int m_oldTurnsToStalemate;
 	BoardMove m_LastMove;
 	ivec2 m_oldKingPos;
 };
@@ -52,13 +53,13 @@ public:
 	Board();
 
 	// Updates the grid
-	void Update(const std::vector<Move>& moves, const std::vector<Piece>& pieces);
+	void Update(int turnsToStalemate, const std::vector<Move>& moves, const std::vector<Piece>& pieces);
 
 	// Returns all valid moves for the specifed player
 	std::vector<BoardMove> GetMoves(int playerID);
 
 	// Returns the value of the game state for the player
-	float GetWorth(int playerID, int turnsToStalemate, const std::function<float(const Board&, const std::vector<BoardMove>&, const BoardPiece&)>& heuristic);
+	float GetWorth(int playerID, const std::function<float(const Board&, const std::vector<BoardMove>&, const BoardPiece&)>& heuristic);
 
 	// Returns the piece at pos
 	// If there is not a piece at pos, nullptr is returned
@@ -106,7 +107,7 @@ private:
 	bool IsInCheckmate(int playerID);
 
 	// Returns true if the specified player is in stalemate
-	bool IsInStalemate(int playerID, int turnsToStalemate);
+	bool IsInStalemate(int playerID);
 
 	// Returns true if there are no legal moves for the specified player
 	bool IsNoLegalMovesStalemate(int playerID);
@@ -115,7 +116,7 @@ private:
 	bool IsNotEnoughPiecesStalemate() const;
 
 	// Returns true if there is a three board repatition stalemate condition
-	bool IsThreeBoardStateStalemate(int turnsToStalemate) const;
+	bool IsThreeBoardStateStalemate() const;
 
 	// Clears the board
 	void Clear();
@@ -129,6 +130,7 @@ private:
 
 	ivec2 m_kingPos[2];
 	BoardMove m_LastMove;
+	int m_turnsToStalemate;
 };
 
 #endif // _BOARD_

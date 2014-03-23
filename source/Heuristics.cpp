@@ -3,7 +3,7 @@
 
 float ChessHeuristic::operator ()(const Board& board, const std::vector<BoardMove>& moves, const BoardPiece& piece) const
 {
-	float worth = 0.0f;
+	float worth = 1.0f;
 	switch(piece.type)
 	{
 		case 'P':
@@ -82,7 +82,6 @@ float ChessHeuristic::operator ()(const Board& board, const std::vector<BoardMov
 			}
 			break;
 		case 'K':
-			worth += 1.0f;
 			break;
 		default:
 			assert("Invalid piece type" && false);
