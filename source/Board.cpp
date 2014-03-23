@@ -114,9 +114,6 @@ float Board::GetWorth(int playerID, int turnsToStalemate, const std::function<fl
 	if(IsInCheckmate(!playerID))
 		return 1000.0f;
 
-	if(IsInStalemate(playerID, turnsToStalemate))
-		return -500.0f;
-
 	std::vector<BoardMove> moves = GetMoves(playerID, false);
 
 	float fTotal[2] = {0,0};
@@ -134,7 +131,8 @@ float Board::GetWorth(int playerID, int turnsToStalemate, const std::function<fl
 		}
 	}
 
-	return fTotal[playerID] / fTotal[!playerID];
+	float stalemateScalar = IsInStalemate(playerID, turnsToStalemate) ? 0.5f : 5.5f;
+	return stalemateScalar*fTotal[playerID] / fTotal[!playerID];
 }
 
 BoardPiece* Board::GetPiece(const ivec2 &pos)
@@ -149,6 +147,34 @@ const BoardPiece* Board::GetPiece(const ivec2& pos) const
 
 	auto iter = m_pieces.find(id);
 	return (iter == m_pieces.end()) ? nullptr : &iter->second;
+}
+
+bool Board::IsOnBoard(int coord) const
+{
+	return (coord <= 8 && coord >= 1);
+}
+
+bool Board::IsOnBoard(const ivec2& coord) const
+{
+	return IsOnBoard(coord.x) && IsOnBoard(coord.y);
+}
+
+bool Board::IsTileEmpty(int file, int rank) const
+{
+	assert(IsOnBoard(file) && IsOnBoard(rank));
+
+	return m_board[file - 1][rank - 1] == 0;
+}
+
+bool Board::IsTileOwner(int file, int rank, int playerID) const
+{
+	assert(IsOnBoard(file) && IsOnBoard(rank));
+
+	if(IsTileEmpty(file,rank))
+		return false;
+
+	const BoardPiece* pPiece = GetPiece({file, rank});
+	return pPiece->owner == playerID;
 }
 
 std::vector<BoardMove> Board::GetMoves(int playerID, bool bCheck)
@@ -422,34 +448,6 @@ void Board::AddMove(const BoardMove& move, bool bCheck, std::vector<BoardMove>& 
 	{
 		moves.push_back(move);
 	}
-}
-
-bool Board::IsOnBoard(int coord) const
-{
-	return (coord <= 8 && coord >= 1);
-}
-
-bool Board::IsOnBoard(const ivec2& coord) const
-{
-	return IsOnBoard(coord.x) && IsOnBoard(coord.y);
-}
-
-bool Board::IsTileEmpty(int file, int rank) const
-{
-	assert(IsOnBoard(file) && IsOnBoard(rank));
-
-	return m_board[file - 1][rank - 1] == 0;
-}
-
-bool Board::IsTileOwner(int file, int rank, int playerID) const
-{
-	assert(IsOnBoard(file) && IsOnBoard(rank));
-
-	if(IsTileEmpty(file,rank))
-		return false;
-
-	const BoardPiece* pPiece = GetPiece({file, rank});
-	return pPiece->owner == playerID;
 }
 
 bool Board::IsInCheck(int playerID)

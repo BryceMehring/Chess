@@ -51,18 +51,19 @@ public:
 	// Constructs an empty board
 	Board();
 
-	// Updates the grid and returns all valid moves
+	// Updates the grid
 	void Update(const std::vector<Move>& moves, const std::vector<Piece>& pieces);
 
+	// Returns all valid moves for the specifed player
 	std::vector<BoardMove> GetMoves(int playerID);
+
+	// Returns the value of the game state for the player
+	float GetWorth(int playerID, int turnsToStalemate, const std::function<float(const Board&, const std::vector<BoardMove>&, const BoardPiece&)>& heuristic);
 
 	// Returns the piece at pos
 	// If there is not a piece at pos, nullptr is returned
 	BoardPiece* GetPiece(const ivec2& pos);
 	const BoardPiece* GetPiece(const ivec2& pos) const;
-
-	// Returns the value of the game state for the owner
-	float GetWorth(int playerID, int turnsToStalemate, const std::function<float(const Board&, const std::vector<BoardMove>&, const BoardPiece&)>& heuristic);
 
 	// Returns true if pos is on the board
 	bool IsOnBoard(int pos) const;
