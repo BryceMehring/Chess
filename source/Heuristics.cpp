@@ -82,6 +82,7 @@ float ChessHeuristic::operator ()(const Board& board, const std::vector<BoardMov
 			}
 			break;
 		case 'K':
+			worth += 1.0f;
 			break;
 		default:
 			assert("Invalid piece type" && false);

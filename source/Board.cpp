@@ -502,7 +502,7 @@ bool Board::IsNotEnoughPiecesStalemate() const
 	// king against king and bishop;
 	// king against king and knight;
 	// king and bishop against king and bishop, with both bishops on squares of the same color
-	int counters[2][2] = {0}; // bishop, knight
+	int counters[2][2] = {{0}}; // bishop, knight
 	ivec2 bishopPos[2];
 
 	for(auto iter : m_board)
