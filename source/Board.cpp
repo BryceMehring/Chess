@@ -518,7 +518,7 @@ bool Board::IsInCheckmate(int playerID)
 
 bool Board::IsInStalemate(int playerID)
 {
-	return IsThreeBoardStateStalemate() || IsNoLegalMovesStalemate(playerID) || IsNotEnoughPiecesStalemate();
+	return IsThreeBoardStateStalemate() || IsNoLegalMovesStalemate(!playerID) || IsNotEnoughPiecesStalemate();
 }
 
 bool Board::IsNoLegalMovesStalemate(int playerID)
@@ -528,7 +528,13 @@ bool Board::IsNoLegalMovesStalemate(int playerID)
 	{
 		std::vector<BoardMove> moves = GetMoves(playerID, false);
 		if(moves.empty())
+		{
+#ifdef DEBUG_OUTPUT
+			cout << "No legal moves detected" << endl;
+#endif
+
 			return true;
+		}
 	}
 
 	return false;
