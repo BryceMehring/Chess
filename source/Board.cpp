@@ -138,13 +138,6 @@ std::vector<BoardMove> Board::GetMoves(int playerID)
 
 float Board::GetWorth(int playerID, const std::function<float(const Board& board, const std::vector<BoardMove>&, const BoardPiece&)>& heuristic)
 {
-	if(IsInCheckmate(!playerID))
-		return 10000.0f;
-
-	// todo: this line might need some changing because a stalemate is bad not only for max, but also for min
-	if(IsInStalemate(playerID))
-		return -10000.0f;
-
 	std::vector<BoardMove> moves = GetMoves(playerID, false);
 
 	float fTotal[2] = {0,0};
@@ -216,6 +209,22 @@ bool Board::IsTileOwner(int file, int rank, int playerID) const
 
 	const BoardPiece* pPiece = GetPiece({file, rank});
 	return pPiece->owner == playerID;
+}
+
+bool Board::IsInCheckmate(int playerID)
+{
+	bool bCheckmate = false;
+	if(IsInCheck(playerID))
+	{
+		std::vector<BoardMove> moves = GetMoves(playerID, false);
+		bCheckmate = moves.empty();
+	}
+	return bCheckmate;
+}
+
+bool Board::IsInStalemate(int playerID)
+{
+	return IsThreeBoardStateStalemate() || IsNoLegalMovesStalemate(!playerID) || IsNotEnoughPiecesStalemate();
 }
 
 std::vector<BoardMove> Board::GetMoves(int playerID, bool bCheck)
@@ -503,22 +512,6 @@ bool Board::IsInCheck(int playerID)
 	});
 
 	return iter != moves.end();
-}
-
-bool Board::IsInCheckmate(int playerID)
-{
-	bool bCheckmate = false;
-	if(IsInCheck(playerID))
-	{
-		std::vector<BoardMove> moves = GetMoves(playerID, false);
-		bCheckmate = moves.empty();
-	}
-	return bCheckmate;
-}
-
-bool Board::IsInStalemate(int playerID)
-{
-	return IsThreeBoardStateStalemate() || IsNoLegalMovesStalemate(!playerID) || IsNotEnoughPiecesStalemate();
 }
 
 bool Board::IsNoLegalMovesStalemate(int playerID)

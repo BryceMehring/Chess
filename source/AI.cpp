@@ -107,10 +107,16 @@ unsigned int AI::MiniMax()
 
 float AI::MiniMax(int depth, int playerID, bool bMax, unsigned int& index)
 {
+	if(m_board.IsInCheckmate(!playerID))
+		return 10000.0f;
+
+	if(m_board.IsInStalemate(playerID))
+		return 0.0f;
+
 	if(depth <= 0)
 		return m_board.GetWorth(playerID, ChessHeuristic());
 
-	float value = bMax ? -FLT_MAX : FLT_MAX;
+	float bestValue = bMax ? -FLT_MAX : FLT_MAX;
 	std::vector<BoardMove> userMoves =  m_board.GetMoves(bMax ? playerID : !playerID);
 	for(unsigned int i = 0; i < userMoves.size(); ++i)
 	{
@@ -121,23 +127,23 @@ float AI::MiniMax(int depth, int playerID, bool bMax, unsigned int& index)
 
 		if(bMax)
 		{
-			if(fMiniMaxValue > value)
+			if(fMiniMaxValue > bestValue)
 			{
 				index = i;
-				value = fMiniMaxValue;
+				bestValue = fMiniMaxValue;
 			}
 		}
 		else
 		{
-			if(fMiniMaxValue < value)
+			if(fMiniMaxValue < bestValue)
 			{
 				index = i;
-				value = fMiniMaxValue;
+				bestValue = fMiniMaxValue;
 			}
 		}
 	}
 
-	return value;
+	return bestValue;
 }
 
 void AI::DrawBoard() const

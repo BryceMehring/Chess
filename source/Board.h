@@ -78,6 +78,12 @@ public:
 	// Returns true if we currently own the tile
 	bool IsTileOwner(int file, int rank, int playerID) const;
 
+	// Returns true if the specified player is in checkmate
+	bool IsInCheckmate(int playerID);
+
+	// Returns true if the specified player is in stalemate
+	bool IsInStalemate(int playerID);
+
 private:
 
 	std::vector<BoardMove> GetMoves(int playerID, bool bCheck);
@@ -102,12 +108,6 @@ private:
 
 	// Returns true if the current state of the board is in check
 	bool IsInCheck(int playerID);
-
-	// Returns true if the specified player is in checkmate
-	bool IsInCheckmate(int playerID);
-
-	// Returns true if the specified player is in stalemate
-	bool IsInStalemate(int playerID);
 
 	// Returns true if there are no legal moves for the specified player
 	bool IsNoLegalMovesStalemate(int playerID);
