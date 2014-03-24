@@ -155,18 +155,14 @@ float Board::GetWorth(int playerID, const std::function<float(const Board& board
 		}
 	}
 
-	float stalemateScalar = 1.0f;
+	float stalemateScalar = 2.0f;
 
-	if(m_turnsToStalemate > 50)
+	if(m_turnsToStalemate < 60)
 	{
-		stalemateScalar = 5.5f;
-	}
-	else if(m_LastMove.pTo == nullptr || m_LastMove.pFrom->type != 'P')
-	{
-		stalemateScalar = 0.5f;
+		stalemateScalar = 0.01f;
 	}
 
-	return stalemateScalar*fTotal[playerID] / fTotal[!playerID];
+	return (stalemateScalar * fTotal[playerID]) / fTotal[!playerID];
 }
 
 BoardPiece* Board::GetPiece(const ivec2 &pos)
@@ -519,7 +515,7 @@ bool Board::IsNoLegalMovesStalemate(int playerID)
 	// Test 1: The game is automatically a draw if the player to move is not in check but has no legal move.
 	if(!IsInCheck(playerID))
 	{
-		std::vector<BoardMove> moves = GetMoves(playerID, false);
+		std::vector<BoardMove> moves = GetMoves(playerID);
 		if(moves.empty())
 		{
 #ifdef DEBUG_OUTPUT

@@ -48,8 +48,8 @@ bool AI::run()
 	{
 		unsigned int index = MiniMax();
 
-#ifdef DEBUG_OUTPUT
 
+#ifdef DEBUG_OUTPUT
 		// Display all moves for this piece:
 
 		cout << "Valid Piece Moves: " << endl;
@@ -60,10 +60,11 @@ bool AI::run()
 				cout << m << endl;
 			}
 		}
-
 #endif // DEBUG_OUTPUT
+
 		Piece* pPiece = &m_board.GetPiece(userMoves[index].from)->piece;
 		pPiece->move(userMoves[index].to.x, userMoves[index].to.y, userMoves[index].promotion);
+
 	}
 
 #ifdef DEBUG_OUTPUT
@@ -81,12 +82,11 @@ bool AI::run()
 //This function is run once, after your last turn.
 void AI::end()
 {
-
 }
 
 unsigned int AI::MiniMax()
 {
-	unsigned int index = -1;
+	unsigned int index = 0;
 
 #ifdef DEBUG_OUTPUT
 	cout << "Minimax worth: " << endl;
@@ -111,7 +111,7 @@ float AI::MiniMax(int depth, int playerID, bool bMax, unsigned int& index)
 		return 10000.0f;
 
 	if(m_board.IsInStalemate(playerID))
-		return 0.0f;
+		return -100.0f;
 
 	if(depth <= 0)
 		return m_board.GetWorth(playerID, ChessHeuristic());

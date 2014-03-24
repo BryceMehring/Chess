@@ -126,6 +126,9 @@ private:
 	std::vector<std::vector<int>> m_board;
 	std::unordered_map<int,BoardPiece> m_pieces;
 
+	// todo: implement this later
+	// std::vector<BoardMove> m_validMoves; // Valid move cache
+
 	std::deque<BoardMove> m_moveHistory;
 
 	ivec2 m_kingPos[2];
