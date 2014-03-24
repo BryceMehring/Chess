@@ -94,7 +94,7 @@ unsigned int AI::MiniMax()
 
 	for(unsigned int i = 1; i <= m_depth; ++i)
 	{
-		float worth = MiniMax(i, playerID(), true, index);
+		float worth = MiniMax(i, playerID(), -FLT_MAX, FLT_MAX, 1, true, index);
 
 #ifdef DEBUG_OUTPUT
 		cout << "Depth " << i << ": ";
@@ -105,42 +105,36 @@ unsigned int AI::MiniMax()
 	return index;
 }
 
-float AI::MiniMax(int depth, int playerID, bool bMax, unsigned int& index)
+float AI::MiniMax(int depth, int playerID, float a, float b, int color, bool bMax, unsigned int& index)
 {
 	if(m_board.IsInCheckmate(!playerID))
-		return 10000.0f;
+		return color*10000.0f;
 
 	if(m_board.IsInStalemate(playerID))
-		return -100.0f;
+		return -color*100.0f;
 
 	if(depth <= 0)
-		return m_board.GetWorth(playerID, ChessHeuristic());
+		return color*m_board.GetWorth(playerID, ChessHeuristic());
 
-	float bestValue = bMax ? -FLT_MAX : FLT_MAX;
+	float bestValue = -FLT_MAX;
 	std::vector<BoardMove> userMoves =  m_board.GetMoves(bMax ? playerID : !playerID);
 	for(unsigned int i = 0; i < userMoves.size(); ++i)
 	{
 		ApplyMove theMove(&userMoves[i], &m_board);
 
 		unsigned int bestMove;
-		float fMiniMaxValue = MiniMax(depth - 1, playerID, !bMax, bestMove);
+		float fMiniMaxValue = -MiniMax(depth - 1, playerID, -b, -a, -color, !bMax, bestMove);
 
-		if(bMax)
+		if(fMiniMaxValue > bestValue)
 		{
-			if(fMiniMaxValue > bestValue)
-			{
-				index = i;
-				bestValue = fMiniMaxValue;
-			}
+			index = i;
+			bestValue = fMiniMaxValue;
 		}
-		else
-		{
-			if(fMiniMaxValue < bestValue)
-			{
-				index = i;
-				bestValue = fMiniMaxValue;
-			}
-		}
+
+		a = std::max(a, fMiniMaxValue);
+
+		if(a >= b)
+			break;
 	}
 
 	return bestValue;

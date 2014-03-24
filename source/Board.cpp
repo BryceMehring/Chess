@@ -209,23 +209,24 @@ bool Board::IsTileOwner(int file, int rank, int playerID) const
 
 bool Board::IsInCheckmate(int playerID)
 {
+	return IsInCheck(playerID) && GetMoves(playerID).empty();
 	bool bCheckmate = false;
 	if(IsInCheck(playerID))
 	{
-		std::vector<BoardMove> moves = GetMoves(playerID, false);
-		bCheckmate = moves.empty();
+		bCheckmate = GetMoves(playerID).empty();
 	}
 	return bCheckmate;
 }
 
 bool Board::IsInStalemate(int playerID)
 {
-	return IsThreeBoardStateStalemate() || IsNoLegalMovesStalemate(!playerID) || IsNotEnoughPiecesStalemate();
+	return IsNoLegalMovesStalemate(!playerID) || IsThreeBoardStateStalemate() || IsNotEnoughPiecesStalemate();
 }
 
 std::vector<BoardMove> Board::GetMoves(int playerID, bool bCheck)
 {
 	std::vector<BoardMove> moves;
+	moves.reserve(35);
 	for(auto iter : m_board)
 	{
 		for(auto subIter : iter)
@@ -259,7 +260,7 @@ std::vector<BoardMove> Board::GetMoves(int playerID, bool bCheck)
 		}
 	}
 
-	return moves;
+	return std::move(moves);
 }
 
 void Board::GeneratePawnMoves(const BoardPiece& piece, bool bCheck, std::vector<BoardMove>& moves)
@@ -499,34 +500,29 @@ void Board::AddMove(const BoardMove& move, bool bCheck, std::vector<BoardMove>& 
 bool Board::IsInCheck(int playerID)
 {
 	// Generate moves for the other team
-	std::vector<BoardMove> moves = GetMoves(!playerID, false);
+	std::vector<BoardMove> m_validMoves = GetMoves(!playerID, false);
 
 	// Check if any of their pieces are attacking our king
-	auto iter = std::find_if(moves.begin(),moves.end(),[&](const BoardMove& m) -> bool
+	auto iter = std::find_if(m_validMoves.begin(),m_validMoves.end(),[&](const BoardMove& m) -> bool
 	{
 		return (m.to.x == m_kingPos[playerID].x) && (m.to.y == m_kingPos[playerID].y);
 	});
 
-	return iter != moves.end();
+	return iter != m_validMoves.end();
 }
 
 bool Board::IsNoLegalMovesStalemate(int playerID)
 {
-	// Test 1: The game is automatically a draw if the player to move is not in check but has no legal move.
-	if(!IsInCheck(playerID))
-	{
-		std::vector<BoardMove> moves = GetMoves(playerID);
-		if(moves.empty())
-		{
-#ifdef DEBUG_OUTPUT
-			cout << "No legal moves detected" << endl;
-#endif
+	bool bNoLegalMoves = !IsInCheck(playerID) && GetMoves(playerID).empty();
 
-			return true;
-		}
+	if(bNoLegalMoves)
+	{
+#ifdef DEBUG_OUTPUT
+		cout << "No legal moves detected" << endl;
+#endif
 	}
 
-	return false;
+	return bNoLegalMoves;
 }
 
 bool Board::IsNotEnoughPiecesStalemate() const
