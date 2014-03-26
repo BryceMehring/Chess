@@ -31,7 +31,7 @@ public:
 private:
 
 	// Poll the query performance counter
-	void PollCounter(std::chrono::high_resolution_clock::time_point& Out);
+	void PollCounter(std::chrono::high_resolution_clock::time_point& Out) const;
 
 private:
 	std::chrono::high_resolution_clock::time_point m_start;

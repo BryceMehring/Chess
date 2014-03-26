@@ -46,7 +46,7 @@ bool Timer::IsActive() const
 	return m_bActive;
 }
 
-void Timer::PollCounter(chrono::high_resolution_clock::time_point& Out)
+void Timer::PollCounter(chrono::high_resolution_clock::time_point& Out) const
 {
 	Out = chrono::high_resolution_clock::now();
 }
