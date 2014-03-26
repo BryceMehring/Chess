@@ -21,8 +21,9 @@ private:
 
   // Minimax algorithm:
   // Returns the best possible move at the current depth limit
-  unsigned int MiniMax();
-  float MiniMax(int depth, int playerID, float a, float b, int color, bool bMax, unsigned int& index);
+  bool MiniMax(BoardMove& moveOut);
+  bool MiniMax(int depth, int playerID, BoardMove& moveOut);
+  float MiniMax(int depth, int playerID, float a, float b, int color);
 
   // Draws the chess board to standard output
   void DrawBoard() const;
