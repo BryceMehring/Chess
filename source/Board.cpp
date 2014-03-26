@@ -10,6 +10,8 @@ using std::endl;
 ApplyMove::ApplyMove(const BoardMove* pMove, Board* pBoard) : m_pMove(pMove), m_pBoard(pBoard)
 {
 	// todo: clean up this code
+	assert(pMove != nullptr);
+	assert(pBoard != nullptr);
 
 	m_pBoard->m_moveHistory.push_front(*m_pMove);
 
@@ -39,6 +41,10 @@ ApplyMove::ApplyMove(const BoardMove* pMove, Board* pBoard) : m_pMove(pMove), m_
 	{
 		m_pMove->pFrom->type = m_pMove->promotion;
 	}
+	else if(m_pMove->specialMove == SpecialMove::Castle)
+	{
+		// Todo: implement this
+	}
 
 	// Turns left for stalemate logic
 	if(m_pMove->pTo == nullptr && m_pMove->pFrom->type != 'P')
@@ -67,6 +73,10 @@ ApplyMove::~ApplyMove()
 	else if(m_pMove->specialMove == SpecialMove::Promotion)
 	{
 		m_pMove->pFrom->type = m_pMove->pFrom->piece.type();
+	}
+	else if(m_pMove->specialMove == SpecialMove::Castle)
+	{
+		// Todo: implement this
 	}
 
 	// Turns left for stalemate logic
@@ -121,10 +131,14 @@ void Board::Update(int turnsToStalemate, const std::vector<Move>& moves, const s
 		m_LastMove = {{moves[0].fromFile(), moves[0].fromRank()}, {moves[0].toFile(), moves[0].toRank()}};
 
 		// todo: this copy could be avoided
-		m_moveHistory.clear();
-		for(auto iter : moves)
+		if(moves.size() >= 8)
 		{
-			m_moveHistory.push_back({{iter.fromFile(), iter.fromRank()}, {iter.toFile(), iter.toRank()}});
+			m_moveHistory.clear();
+
+			for(unsigned int i = 0; i < 8; ++i)
+			{
+				m_moveHistory.push_back({{moves[i].fromFile(), moves[i].fromRank()}, {moves[i].toFile(), moves[i].toRank()}});
+			}
 		}
 	}
 
@@ -149,20 +163,19 @@ float Board::GetWorth(int playerID, const std::function<float(const Board& board
 			if(iter != m_pieces.end())
 			{
 				const BoardPiece& piece = iter->second;
-
 				fTotal[piece.owner] += heuristic(*this, moves, piece);
 			}
 		}
 	}
 
-	float stalemateScalar = 2.0f;
+	/*float stalemateScalar = 2.0f;
 
 	if(m_turnsToStalemate < 60)
 	{
 		stalemateScalar = 0.01f;
-	}
+	}*/
 
-	return (stalemateScalar * fTotal[playerID]) / fTotal[!playerID];
+	return (fTotal[playerID]) - fTotal[!playerID];
 }
 
 BoardPiece* Board::GetPiece(const ivec2 &pos)
@@ -210,17 +223,11 @@ bool Board::IsTileOwner(int file, int rank, int playerID) const
 bool Board::IsInCheckmate(int playerID)
 {
 	return IsInCheck(playerID) && GetMoves(playerID).empty();
-	bool bCheckmate = false;
-	if(IsInCheck(playerID))
-	{
-		bCheckmate = GetMoves(playerID).empty();
-	}
-	return bCheckmate;
 }
 
 bool Board::IsInStalemate(int playerID)
 {
-	return IsNoLegalMovesStalemate(!playerID) || IsThreeBoardStateStalemate() || IsNotEnoughPiecesStalemate();
+	return IsThreeBoardStateStalemate() || IsNotEnoughPiecesStalemate() || IsNoLegalMovesStalemate(!playerID);
 }
 
 std::vector<BoardMove> Board::GetMoves(int playerID, bool bCheck)
