@@ -150,11 +150,11 @@ std::vector<BoardMove> Board::GetMoves(int playerID)
 	return GetMoves(playerID, true);
 }
 
-float Board::GetWorth(int playerID, const std::function<float(const Board& board, const std::vector<BoardMove>&, const BoardPiece&)>& heuristic)
+int Board::GetWorth(int playerID, const std::function<int(const Board& board, const std::vector<BoardMove>&, const BoardPiece&)>& heuristic)
 {
 	std::vector<BoardMove> moves = GetMoves(playerID, false);
 
-	float fTotal[2] = {0,0};
+	int iTotal[2] = {0,0};
 	for(auto iter : m_board)
 	{
 		for(auto subIter : iter)
@@ -163,7 +163,7 @@ float Board::GetWorth(int playerID, const std::function<float(const Board& board
 			if(iter != m_pieces.end())
 			{
 				const BoardPiece& piece = iter->second;
-				fTotal[piece.owner] += heuristic(*this, moves, piece);
+				iTotal[piece.owner] += heuristic(*this, moves, piece);
 			}
 		}
 	}
@@ -175,7 +175,7 @@ float Board::GetWorth(int playerID, const std::function<float(const Board& board
 		stalemateScalar = 0.01f;
 	}*/
 
-	return (fTotal[playerID]) - fTotal[!playerID];
+	return (iTotal[playerID]) - iTotal[!playerID];
 }
 
 BoardPiece* Board::GetPiece(const ivec2 &pos)

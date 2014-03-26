@@ -59,7 +59,7 @@ public:
 	std::vector<BoardMove> GetMoves(int playerID);
 
 	// Returns the value of the game state for the player
-	float GetWorth(int playerID, const std::function<float(const Board&, const std::vector<BoardMove>&, const BoardPiece&)>& heuristic);
+	int GetWorth(int playerID, const std::function<int(const Board&, const std::vector<BoardMove>&, const BoardPiece&)>& heuristic);
 
 	// Returns the piece at pos
 	// If there is not a piece at pos, nullptr is returned
