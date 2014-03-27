@@ -241,7 +241,7 @@ bool Board::IsInCheckmate(int playerID)
 
 bool Board::IsInStalemate(int playerID)
 {
-	return IsThreeBoardStateStalemate() || IsNotEnoughPiecesStalemate() || IsNoLegalMovesStalemate(!playerID);
+	return IsThreeBoardStateStalemate() || IsNotEnoughPiecesStalemate() /*|| IsNoLegalMovesStalemate(!playerID)*/;
 }
 
 std::vector<BoardMove> Board::GetMoves(int playerID, bool bCheck)
@@ -329,7 +329,7 @@ void Board::GeneratePawnMoves(const BoardPiece& piece, bool bCheck, std::vector<
 						{
 							ivec2 from = {piece.file, piece.rank};
 							ivec2 to = {piece.file - fileDiff, iNewRank};
-							AddMove({from, to, 'Q', 'P', SpecialMove::EnPassant}, bCheck, moves);
+							AddMove({from, to, 'P', 'Q', SpecialMove::EnPassant}, bCheck, moves);
 						}
 					}
 				}
@@ -357,12 +357,12 @@ void Board::GeneratePromotedPawnMoves(const ivec2& from, const ivec2& to, int pl
 	{
 		for(int promotion : {'Q', 'B', 'N', 'R'})
 		{
-			AddMove({from, to, promotion, capturedType, SpecialMove::Promotion}, bCheck, moves);
+			AddMove({from, to, capturedType, promotion, SpecialMove::Promotion}, bCheck, moves);
 		}
 	}
 	else
 	{
-		AddMove({from, to, 'Q', capturedType}, bCheck, moves);
+		AddMove({from, to, capturedType, 'Q'}, bCheck, moves);
 	}
 }
 
@@ -498,7 +498,6 @@ void Board::GenerateCastleMove(const BoardPiece& piece, bool bCheck, std::vector
 				}
 			}
 		}
-
 	}
 }
 
