@@ -45,7 +45,9 @@ bool AI::run()
 	BoardMove bestMove;
 	if(MiniMax(bestMove))
 	{
-		bestMove.pFrom->piece.move(bestMove.to.x, bestMove.to.y, bestMove.promotion);
+		BoardPiece* pPiece = m_board.GetPiece(bestMove.from);
+		assert(pPiece != nullptr);
+		pPiece->piece.move(bestMove.to.x, bestMove.to.y, bestMove.promotion);
 	}
 
 #ifdef DEBUG_OUTPUT
@@ -145,7 +147,7 @@ float AI::MiniMax(int depth, int playerID, float a, float b, int color)
 	std::vector<BoardMove> userMoves =  m_board.GetMoves(color == 1 ? playerID : !playerID);
 	std::partition(userMoves.begin(), userMoves.end(),[](const BoardMove& a) -> bool
 	{
-		return a.pTo != nullptr;
+		return a.capturedType != 0;
 	});
 	for(unsigned int i = 0; i < userMoves.size(); ++i)
 	{

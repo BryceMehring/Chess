@@ -42,6 +42,26 @@ private:
 	ivec2 m_oldKingPos;
 };
 
+class BoardMoveHash
+{
+public:
+
+	std::size_t operator()(const std::vector<std::vector<int>>& key) const
+	{
+		std::size_t h = 5381;
+		for(const auto& iter : key)
+		{
+			for(int i : iter)
+			{
+				h *= 33;
+				h += char(i + '0');
+			}
+		}
+
+		return h;
+	}
+};
+
 // Defines a chess board which manages generating valid action states
 class Board
 {
@@ -103,6 +123,10 @@ private:
 	// Generates valid castle moves
 	void GenerateCastleMove(const BoardPiece& piece, bool bCheck, std::vector<BoardMove>& moves);
 
+	// Returns the type of the piece at pos,
+	// If nothing is on the tile, 0 is returned
+	int GetPieceType(const ivec2& pos) const;
+
 	// Adds a move to the move list only if after applying the move, it does not put us in check, or if bCheck is false
 	void AddMove(const BoardMove& move, bool bCheck, std::vector<BoardMove>& moves);
 
@@ -125,6 +149,8 @@ private:
 
 	std::vector<std::vector<int>> m_board;
 	std::unordered_map<int,BoardPiece> m_pieces;
+
+	std::unordered_map<std::vector<std::vector<int>>, std::vector<BoardMove>, BoardMoveHash> m_validMoveCache[2];
 
 	std::deque<BoardMove> m_moveHistory;
 

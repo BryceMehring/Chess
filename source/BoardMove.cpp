@@ -11,14 +11,14 @@ static char NumberToLetter(int number)
 std::ostream& operator<<(std::ostream& stream, const BoardMove& move)
 {
 	char spacing = '-';
-	if(move.pTo != nullptr)
+	if(move.capturedType != 0)
 	{
 		spacing = 'x';
 	}
 
-	if(move.pFrom->type != 'P')
+	if(move.capturedType != 'P')
 	{
-		stream << char(move.pFrom->type);
+		stream << char(move.capturedType);
 	}
 
 	if(move.specialMove != SpecialMove::Castle)

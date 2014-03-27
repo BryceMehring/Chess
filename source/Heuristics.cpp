@@ -111,9 +111,12 @@ int ChessHeuristic::operator ()(const Board& board, const std::vector<BoardMove>
 
 	for(const BoardMove& move : moves)
 	{
-		if(move.pFrom->piece.id() == piece.piece.id())
+		const BoardPiece* pPiece = board.GetPiece(move.from);
+		assert(pPiece != nullptr);
+
+		if(pPiece->piece.id() == piece.piece.id())
 		{
-			if(move.pTo != nullptr)
+			if(move.capturedType != 0)
 			{
 				worth += 100.0f;
 			}

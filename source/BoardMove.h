@@ -20,25 +20,22 @@ struct BoardMove
 	{
 	}
 
-	BoardMove(const ivec2& f, const ivec2& t, BoardPiece* pF = nullptr, BoardPiece* pT = nullptr, int p = 'Q', SpecialMove m = SpecialMove::None) :
-	from(f), to(t), pFrom(pF), pTo(pT), promotion(p), specialMove(m)
+	BoardMove(const ivec2& f, const ivec2& t, int capType = 0, int p = 'Q', SpecialMove m = SpecialMove::None) :
+	from(f), to(t), promotion(p), capturedType(capType), specialMove(m)
 	{
 	}
 
 	// Starting position of the piece movement
 	ivec2 from;
 
-	// Tile that the piece is moving to
+	// Position that the piece is moving to
 	ivec2 to;
-
-	// Piece that is moving
-	BoardPiece* pFrom;
-
-	// Piece that is being attacked, else it points to nothing
-	BoardPiece* pTo;
 
 	// Promotion type if the moving piece is a pawn
 	int promotion;
+
+	// Type of the piece that is being captured
+	int capturedType;
 
 	// Specifies what kind of move is being made
 	SpecialMove specialMove;

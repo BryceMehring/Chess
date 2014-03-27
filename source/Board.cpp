@@ -13,6 +13,9 @@ ApplyMove::ApplyMove(const BoardMove* pMove, Board* pBoard) : m_pMove(pMove), m_
 	assert(pMove != nullptr);
 	assert(pBoard != nullptr);
 
+	BoardPiece* pFrom = m_pBoard->GetPiece(m_pMove->from);
+	assert(pFrom != nullptr);
+
 	m_pBoard->m_moveHistory.push_front(*m_pMove);
 
 	m_oldIndex = m_pBoard->m_board[m_pMove->from.x - 1][m_pMove->from.y - 1];
@@ -24,22 +27,22 @@ ApplyMove::ApplyMove(const BoardMove* pMove, Board* pBoard) : m_pMove(pMove), m_
 	m_LastMove = m_pBoard->m_LastMove;
 	m_pBoard->m_LastMove = *m_pMove;
 
-	m_pMove->pFrom->file = m_pMove->to.x;
-	m_pMove->pFrom->rank = m_pMove->to.y;
+	pFrom->file = m_pMove->to.x;
+	pFrom->rank = m_pMove->to.y;
 
-	m_hasMoved = m_pMove->pFrom->hasMoved;
-	m_pMove->pFrom->hasMoved = 1;
+	m_hasMoved = pFrom->hasMoved;
+	pFrom->hasMoved = 1;
 
 	// Keep track of the kings
-	if(m_pMove->pFrom->type == 'K')
+	if(pFrom->type == 'K')
 	{
-		m_oldKingPos = m_pBoard->m_kingPos[m_pMove->pFrom->owner];
-		m_pBoard->m_kingPos[m_pMove->pFrom->owner] = m_pMove->to;
+		m_oldKingPos = m_pBoard->m_kingPos[pFrom->owner];
+		m_pBoard->m_kingPos[pFrom->owner] = m_pMove->to;
 	}
 	// Promotion logic
 	else if(m_pMove->specialMove == SpecialMove::Promotion)
 	{
-		m_pMove->pFrom->type = m_pMove->promotion;
+		pFrom->type = m_pMove->promotion;
 	}
 	else if(m_pMove->specialMove == SpecialMove::Castle)
 	{
@@ -47,7 +50,7 @@ ApplyMove::ApplyMove(const BoardMove* pMove, Board* pBoard) : m_pMove(pMove), m_
 	}
 
 	// Turns left for stalemate logic
-	if(m_pMove->pTo == nullptr && m_pMove->pFrom->type != 'P')
+	if(pBoard->GetPiece(m_pMove->to) == nullptr && pFrom->type != 'P')
 	{
 		m_pBoard->m_turnsToStalemate--;
 	}
@@ -61,18 +64,20 @@ ApplyMove::ApplyMove(const BoardMove* pMove, Board* pBoard) : m_pMove(pMove), m_
 ApplyMove::~ApplyMove()
 {
 	// todo: clean up this code
+	BoardPiece* pFrom = m_pBoard->GetPiece(m_pMove->to);
+	assert(pFrom != nullptr);
 
 	m_pBoard->m_moveHistory.pop_front();
 
 	// Keep track of the kings
-	if(m_pMove->pFrom->type == 'K')
+	if(pFrom->type == 'K')
 	{
-		m_pBoard->m_kingPos[m_pMove->pFrom->owner] = m_oldKingPos;
+		m_pBoard->m_kingPos[pFrom->owner] = m_oldKingPos;
 	}
 	// Promotion logic
 	else if(m_pMove->specialMove == SpecialMove::Promotion)
 	{
-		m_pMove->pFrom->type = m_pMove->pFrom->piece.type();
+		pFrom->type = pFrom->piece.type();
 	}
 	else if(m_pMove->specialMove == SpecialMove::Castle)
 	{
@@ -80,7 +85,7 @@ ApplyMove::~ApplyMove()
 	}
 
 	// Turns left for stalemate logic
-	if(m_pMove->pTo == nullptr && m_pMove->pFrom->type != 'P')
+	if(m_pBoard->GetPiece(m_pMove->to) == nullptr && pFrom->type != 'P')
 	{
 		m_pBoard->m_turnsToStalemate++;
 	}
@@ -94,9 +99,9 @@ ApplyMove::~ApplyMove()
 
 	m_pBoard->m_LastMove = m_LastMove;
 
-	m_pMove->pFrom->file = m_pMove->from.x;
-	m_pMove->pFrom->rank = m_pMove->from.y;
-	m_pMove->pFrom->hasMoved = m_hasMoved;
+	pFrom->file = m_pMove->from.x;
+	pFrom->rank = m_pMove->from.y;
+	pFrom->hasMoved = m_hasMoved;
 }
 
 Board::Board() : m_turnsToStalemate(0)
@@ -147,7 +152,16 @@ void Board::Update(int turnsToStalemate, const std::vector<Move>& moves, const s
 
 std::vector<BoardMove> Board::GetMoves(int playerID)
 {
-	return GetMoves(playerID, true);
+	auto iter = m_validMoveCache[playerID].find(m_board);
+	if(iter != m_validMoveCache[playerID].end())
+	{
+		//cout << "Cache Hit" << endl;
+		return iter->second;
+	}
+
+	std::vector<BoardMove> moves = GetMoves(playerID, true);
+	m_validMoveCache[playerID].insert({m_board, moves});
+	return std::move(moves);
 }
 
 int Board::GetWorth(int playerID, const std::function<int(const Board& board, const std::vector<BoardMove>&, const BoardPiece&)>& heuristic)
@@ -293,7 +307,7 @@ void Board::GeneratePawnMoves(const BoardPiece& piece, bool bCheck, std::vector<
 				{
 					ivec2 from = {piece.file, piece.rank};
 					ivec2 to = {piece.file, iDoubleMoveRank};
-					AddMove({from, to, GetPiece(from), GetPiece(to)}, bCheck, moves);
+					AddMove({from, to}, bCheck, moves);
 				}
 			}
 		}
@@ -315,7 +329,7 @@ void Board::GeneratePawnMoves(const BoardPiece& piece, bool bCheck, std::vector<
 						{
 							ivec2 from = {piece.file, piece.rank};
 							ivec2 to = {piece.file - fileDiff, iNewRank};
-							AddMove({from, to, GetPiece(from), GetPiece(m_LastMove.to), 'Q', SpecialMove::EnPassant}, bCheck, moves);
+							AddMove({from, to, 'Q', 'P', SpecialMove::EnPassant}, bCheck, moves);
 						}
 					}
 				}
@@ -338,16 +352,17 @@ void Board::GeneratePawnMoves(const BoardPiece& piece, bool bCheck, std::vector<
 
 void Board::GeneratePromotedPawnMoves(const ivec2& from, const ivec2& to, int playerID, bool bCheck, std::vector<BoardMove>& moves)
 {
+	int capturedType = GetPieceType(to);
 	if((to.y == 1 && playerID == 1) || (to.y == 8 && playerID == 0))
 	{
 		for(int promotion : {'Q', 'B', 'N', 'R'})
 		{
-			AddMove({from, to, GetPiece(from), GetPiece(to), promotion, SpecialMove::Promotion}, bCheck, moves);
+			AddMove({from, to, promotion, capturedType, SpecialMove::Promotion}, bCheck, moves);
 		}
 	}
 	else
 	{
-		AddMove({from, to, GetPiece(from), GetPiece(to)}, bCheck, moves);
+		AddMove({from, to, 'Q', capturedType}, bCheck, moves);
 	}
 }
 
@@ -395,7 +410,7 @@ void Board::GenerateDirectionMoves(const BoardPiece& piece, bool bCheck, std::ve
 			{
 				// If the tile is empty or is an enemy
 				ivec2 from = {piece.file, piece.rank};
-				AddMove({from, pos, GetPiece(from), GetPiece(pos)}, bCheck, moves);
+				AddMove({from, pos, GetPieceType(pos)}, bCheck, moves);
 			}
 
 		} while(IsOnBoard(pos) && IsTileEmpty(pos.x,pos.y));
@@ -431,7 +446,7 @@ void Board::GenerateDiscreteMoves(const BoardPiece& piece, bool bCheck, std::vec
 		if(IsOnBoard(pos) && !IsTileOwner(pos.x, pos.y, piece.owner))
 		{
 			ivec2 from = {piece.file, piece.rank};
-			AddMove({from, pos, GetPiece(from), GetPiece(pos)}, bCheck, moves);
+			AddMove({from, pos, GetPieceType(pos)}, bCheck, moves);
 		}
 	}
 }
@@ -479,7 +494,7 @@ void Board::GenerateCastleMove(const BoardPiece& piece, bool bCheck, std::vector
 				{
 					ivec2 from = {piece.file, piece.rank};
 					ivec2 to = {piece.file + dir[i] * 2, piece.rank};
-					AddMove({from, to, GetPiece(from), GetPiece(to), 'Q', SpecialMove::Castle}, bCheck, moves);
+					AddMove({from, to, 0, 'Q', SpecialMove::Castle}, bCheck, moves);
 				}
 			}
 		}
@@ -487,13 +502,22 @@ void Board::GenerateCastleMove(const BoardPiece& piece, bool bCheck, std::vector
 	}
 }
 
+int Board::GetPieceType(const ivec2& pos) const
+{
+	const BoardPiece* pTo = GetPiece(pos);
+	return ((pTo != nullptr) ? pTo->type : 0);
+}
+
 void Board::AddMove(const BoardMove& move, bool bCheck, std::vector<BoardMove>& moves)
 {
 	if(bCheck)
 	{
+		BoardPiece* pFrom = GetPiece(move.from);
+		assert(pFrom != nullptr);
+
 		ApplyMove triedMove(&move, this);
 
-		if(!IsInCheck(move.pFrom->owner))
+		if(!IsInCheck(pFrom->owner))
 		{
 			moves.push_back(move);
 		}
