@@ -50,7 +50,7 @@ ApplyMove::ApplyMove(const BoardMove* pMove, Board* pBoard) : m_pMove(pMove), m_
 	}
 
 	// Turns left for stalemate logic
-	if(pBoard->GetPiece(m_pMove->to) == nullptr && pFrom->type != 'P')
+	if(m_pMove->capturedType == 0 && pFrom->type != 'P')
 	{
 		m_pBoard->m_turnsToStalemate--;
 	}
@@ -85,7 +85,7 @@ ApplyMove::~ApplyMove()
 	}
 
 	// Turns left for stalemate logic
-	if(m_pBoard->GetPiece(m_pMove->to) == nullptr && pFrom->type != 'P')
+	if(m_pMove->capturedType == 0 && pFrom->type != 'P')
 	{
 		m_pBoard->m_turnsToStalemate++;
 	}
@@ -241,7 +241,7 @@ bool Board::IsInCheckmate(int playerID)
 
 bool Board::IsInStalemate(int playerID)
 {
-	return IsThreeBoardStateStalemate() || IsNotEnoughPiecesStalemate() /*|| IsNoLegalMovesStalemate(!playerID)*/;
+	return IsThreeBoardStateStalemate() || IsNotEnoughPiecesStalemate() || IsNoLegalMovesStalemate(!playerID);
 }
 
 std::vector<BoardMove> Board::GetMoves(int playerID, bool bCheck)

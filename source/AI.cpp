@@ -137,7 +137,7 @@ float AI::MiniMax(int depth, int playerID, float a, float b, int color)
 		return color*10000.0f;
 
 	if(m_board.IsInStalemate(playerID))
-		return -100.0f;
+		return -color*500.0f;
 
 	if(depth <= 0)
 		return color*m_board.GetWorth(playerID, ChessHeuristic());
