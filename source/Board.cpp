@@ -241,7 +241,7 @@ bool Board::IsInCheckmate(int playerID)
 
 bool Board::IsInStalemate(int playerID)
 {
-	return IsThreeBoardStateStalemate() || IsNotEnoughPiecesStalemate() || IsNoLegalMovesStalemate(!playerID);
+	return IsThreeBoardStateStalemate() || IsNotEnoughPiecesStalemate() /*|| IsNoLegalMovesStalemate(!playerID)*/;
 }
 
 std::vector<BoardMove> Board::GetMoves(int playerID, bool bCheck)
