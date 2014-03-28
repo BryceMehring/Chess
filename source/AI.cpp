@@ -70,19 +70,16 @@ void AI::end()
 bool AI::MiniMax(BoardMove& moveOut)
 {
 	bool bFoundMove = false;
+	unsigned int i = 1;
 
-/*#ifdef DEBUG_OUTPUT
-	cout << "Minimax worth: " << endl;
-#endif*/
+	m_minimaxTimer.Reset();
+	m_minimaxTimer.Start();
 
-	for(unsigned int i = 1; i <= m_depth; ++i)
+	while(i <= m_depth && ((m_minimaxTimer.GetTime()) < 9000000000))
 	{
 		bFoundMove |= MiniMax(i, playerID(), moveOut);
-
-/*#ifdef DEBUG_OUTPUT
-		cout << "Depth " << i << ": ";
-		cout << worth << endl;
-#endif*/
+		cout << "Depth " << i << " time: " << m_minimaxTimer.GetTime() << endl;
+		++i;
 	}
 
 	return bFoundMove;
@@ -101,11 +98,19 @@ bool AI::MiniMax(int depth, int playerID, BoardMove& moveOut)
 
 		float val = -MiniMax(depth - 1, playerID, -FLT_MAX, FLT_MAX, -1);
 
+		// If the new move is better than the last
 		if(val > bestVal)
 		{
 			index = i;
 			bestVal = val;
 			bFoundMove = true;
+		}
+
+		// If we have ran out of time
+		if(bFoundMove && ((m_minimaxTimer.GetTime()) >= 9000000000))
+		{
+			bFoundMove = false;
+			break;
 		}
 	}
 
@@ -113,19 +118,6 @@ bool AI::MiniMax(int depth, int playerID, BoardMove& moveOut)
 	{
 		moveOut = userMoves[index];
 	}
-
-	/*#ifdef DEBUG_OUTPUT
-			// Display all moves for this piece:
-
-			cout << "Valid Piece Moves: " << endl;
-			for(const BoardMove& m : userMoves)
-			{
-				if(m.from == userMoves[index].from)
-				{
-					cout << m << endl;
-				}
-			}
-	#endif // DEBUG_OUTPUT*/
 
 	return bFoundMove;
 
@@ -136,7 +128,7 @@ float AI::MiniMax(int depth, int playerID, float a, float b, int color)
 	if(m_board.IsInCheckmate(!playerID))
 		return color*10000.0f;
 
-	if(m_board.IsInStalemate(playerID))
+	if(m_board.IsInStalemate(color == 1 ? playerID : !playerID))
 		return -color*500.0f;
 
 	if(depth <= 0)
@@ -144,10 +136,24 @@ float AI::MiniMax(int depth, int playerID, float a, float b, int color)
 
 	float bestValue = -FLT_MAX;
 
+	const std::vector<BoardMove> enemyMoves = m_board.GetMoves(color == 1 ? !playerID : playerID);
 	std::vector<BoardMove> userMoves =  m_board.GetMoves(color == 1 ? playerID : !playerID);
-	std::partition(userMoves.begin(), userMoves.end(),[](const BoardMove& a) -> bool
+	std::partition(userMoves.begin(), userMoves.end(),[&](const BoardMove& a) -> bool
 	{
-		return a.capturedType != 0;
+		if(a.capturedType != 0)
+			return true;
+
+		bool bUnderAttack = false;
+		for(const BoardMove& m : enemyMoves)
+		{
+			if(m.to == a.from)
+			{
+				bUnderAttack = true;
+				break;
+			}
+		}
+
+		return bUnderAttack;
 	});
 	for(unsigned int i = 0; i < userMoves.size(); ++i)
 	{

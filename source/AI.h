@@ -3,6 +3,7 @@
 
 #include "BaseAI.h"
 #include "Board.h"
+#include "Timer.h"
 #include <iostream>
 #include <random>
 
@@ -32,6 +33,8 @@ private:
   std::uint64_t m_totalTime;
   unsigned int m_count;
   unsigned int m_depth;
+
+  Timer m_minimaxTimer;
 };
 
 #endif
