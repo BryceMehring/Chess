@@ -260,6 +260,11 @@ bool Board::IsInStalemate(int playerID)
 	return IsThreeBoardStateStalemate() || IsNotEnoughPiecesStalemate() /*|| IsNoLegalMovesStalemate(!playerID)*/;
 }
 
+unsigned int Board::GetNumPieces() const
+{
+	return m_pieces.size();
+}
+
 std::vector<BoardMove> Board::GetMoves(int playerID, bool bCheck)
 {
 	std::vector<BoardMove> moves;

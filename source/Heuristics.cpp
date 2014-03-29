@@ -61,7 +61,19 @@ const int ChessHeuristic::m_queenMoveTable[8][8] =
 	{-20,-10,-10, -5, -5,-10,-10,-20}
 };
 
-const int ChessHeuristic::m_kingMoveTable[8][8] =
+const int ChessHeuristic::m_kingMiddleGameTable[8][8] =
+{
+	{-30,-40,-40,-50,-50,-40,-40,-30},
+	{-30,-40,-40,-50,-50,-40,-40,-30},
+	{-30,-40,-40,-50,-50,-40,-40,-30},
+	{-30,-40,-40,-50,-50,-40,-40,-30},
+	{-20,-30,-30,-40,-40,-30,-30,-20},
+	{-10,-20,-20,-20,-20,-20,-20,-10},
+	{ 20, 20,  0,  0,  0,  0, 20, 20},
+	{ 20, 30, 10,  0,  0, 10, 30, 20}
+};
+
+const int ChessHeuristic::m_kingEndGameMoveTable[8][8] =
 {
 	{-50,-40,-30,-20,-20,-30,-40,-50},
 	{-30,-20,-10,  0,  0,-10,-20,-30},
@@ -77,14 +89,13 @@ int ChessHeuristic::operator ()(const Board& board, const std::vector<BoardMove>
 {
 	int worth = 0;
 	int rank = ((piece.owner == 0) ? piece.rank - 1 : 7 - piece.rank);
+	unsigned int piecesCount = board.GetNumPieces();
 	switch(piece.type)
 	{
 		case 'P':
-		{
 			worth += 100;
 			worth += m_pawnMoveTable[rank][piece.file];
 			break;
-		}
 		case 'N':
 			worth += 320;
 			worth += m_knightMoveTable[rank][piece.file];
@@ -102,7 +113,14 @@ int ChessHeuristic::operator ()(const Board& board, const std::vector<BoardMove>
 			worth += m_queenMoveTable[rank][piece.file];
 			break;
 		case 'K':
-			worth += m_kingMoveTable[rank][piece.file];
+			if(piecesCount > 16)
+			{
+				worth += m_kingMiddleGameTable[rank][piece.file];
+			}
+			else
+			{
+				worth += m_kingEndGameMoveTable[rank][piece.file];
+			}
 			break;
 		default:
 			assert("Invalid piece type" && false);
@@ -118,7 +136,7 @@ int ChessHeuristic::operator ()(const Board& board, const std::vector<BoardMove>
 		{
 			if(move.capturedType != 0)
 			{
-				worth += 100.0f;
+				worth += 50.0f;
 			}
 		}
 	}

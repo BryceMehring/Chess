@@ -116,6 +116,8 @@ public:
 	// Returns true if the specified player is in stalemate
 	bool IsInStalemate(int playerID);
 
+	unsigned int GetNumPieces() const;
+
 private:
 
 	std::vector<BoardMove> GetMoves(int playerID, bool bCheck);

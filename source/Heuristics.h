@@ -19,7 +19,8 @@ private:
 	static const int m_bishopMoveTable[8][8];
 	static const int m_rookMoveTable[8][8];
 	static const int m_queenMoveTable[8][8];
-	static const int m_kingMoveTable[8][8];
+	static const int m_kingMiddleGameTable[8][8];
+	static const int m_kingEndGameMoveTable[8][8];
 
 };
 
