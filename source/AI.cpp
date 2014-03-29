@@ -11,7 +11,7 @@ using std::cout;
 using std::endl;
 using namespace std::placeholders;
 
-AI::AI(Connection* conn, unsigned int depth) : BaseAI(conn), m_totalTime(0), m_count(1), m_depth(depth) {}
+AI::AI(Connection* conn, unsigned int depth) : BaseAI(conn), m_totalTime(0), m_count(1), m_depth(depth), m_bestIndex(0) {}
 
 const char* AI::username()
 {
@@ -70,16 +70,18 @@ void AI::end()
 bool AI::MiniMax(BoardMove& moveOut)
 {
 	bool bFoundMove = false;
-	unsigned int i = 1;
+	unsigned int d = 1;
 
 	m_minimaxTimer.Reset();
 	m_minimaxTimer.Start();
 
-	while(i <= m_depth && ((m_minimaxTimer.GetTime()) < 9000000000))
+	m_bestIndex = 0;
+
+	while(d <= m_depth && ((m_minimaxTimer.GetTime()) < 9000000000))
 	{
-		bFoundMove |= MiniMax(i, playerID(), moveOut);
-		cout << "Depth " << i << " time: " << m_minimaxTimer.GetTime() << endl;
-		++i;
+		bFoundMove |= MiniMax(d, playerID(), moveOut);
+		cout << "Depth " << d << " time: " << m_minimaxTimer.GetTime() << endl;
+		++d;
 	}
 
 	return bFoundMove;
@@ -87,36 +89,44 @@ bool AI::MiniMax(BoardMove& moveOut)
 
 bool AI::MiniMax(int depth, int playerID, BoardMove& moveOut)
 {
-	unsigned int index = 0;
-	float bestVal = -FLT_MAX;
 	bool bFoundMove = false;
 
 	std::vector<BoardMove> userMoves =  m_board.GetMoves(playerID);
-	for(unsigned int i = 0; i < userMoves.size(); ++i)
+	if(!userMoves.empty())
 	{
-		ApplyMove theMove(&userMoves[i], &m_board);
+		unsigned int index = 0;
 
-		float val = -MiniMax(depth - 1, playerID, -FLT_MAX, FLT_MAX, -1);
+		float a = -FLT_MAX;
+		float b = FLT_MAX;
 
-		// If the new move is better than the last
-		if(val > bestVal)
+		std::swap(userMoves[0], userMoves[m_bestIndex]);
+		for(unsigned int i = 0; i < userMoves.size(); ++i)
 		{
-			index = i;
-			bestVal = val;
-			bFoundMove = true;
+			ApplyMove theMove(&userMoves[i], &m_board);
+
+			float val = -MiniMax(depth - 1, playerID, -b, -a, -1);
+
+			// If the new move is better than the last
+			if(val > a)
+			{
+				index = i;
+				a = val;
+				bFoundMove = true;
+			}
+
+			// If we have ran out of time
+			if(bFoundMove && ((m_minimaxTimer.GetTime()) >= 9000000000))
+			{
+				bFoundMove = false;
+				break;
+			}
 		}
 
-		// If we have ran out of time
-		if(bFoundMove && ((m_minimaxTimer.GetTime()) >= 9000000000))
+		if(bFoundMove)
 		{
-			bFoundMove = false;
-			break;
+			moveOut = userMoves[index];
+			m_bestIndex = index;
 		}
-	}
-
-	if(bFoundMove)
-	{
-		moveOut = userMoves[index];
 	}
 
 	return bFoundMove;
@@ -133,8 +143,6 @@ float AI::MiniMax(int depth, int playerID, float a, float b, int color)
 
 	if(depth <= 0)
 		return color*m_board.GetWorth(playerID, ChessHeuristic());
-
-	float bestValue = -FLT_MAX;
 
 	const std::vector<BoardMove> enemyMoves = m_board.GetMoves(color == 1 ? !playerID : playerID);
 	std::vector<BoardMove> userMoves =  m_board.GetMoves(color == 1 ? playerID : !playerID);
@@ -155,20 +163,21 @@ float AI::MiniMax(int depth, int playerID, float a, float b, int color)
 
 		return bUnderAttack;
 	});
+
 	for(unsigned int i = 0; i < userMoves.size(); ++i)
 	{
 		ApplyMove theMove(&userMoves[i], &m_board);
 
-		bestValue = std::max(bestValue, -MiniMax(depth - 1, playerID, -b, -a, -color));
-		a = std::max(a, bestValue);
+		float score = -MiniMax(depth - 1, playerID, -b, -a, -color);
 
-		if(a >= b)
-		{
-			break;
-		}
+		if(score >= b)
+			return b;   //  fail hard beta-cutoff
+
+		if(score > a)
+			a = score; // alpha acts like max in MiniMax
 	}
 
-	return bestValue;
+	return a;
 }
 
 void AI::DrawBoard() const

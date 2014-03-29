@@ -56,17 +56,17 @@ class BoardMoveHash
 {
 public:
 
-	std::size_t operator()(const std::vector<std::vector<BoardTile>>& key) const
+	std::size_t operator()(const std::vector<std::vector<int>>& key) const
 	{
 		/*std::size_t h = 5381;
 		boost::hash_range(h, key.begin(), key.end());*/
 		std::size_t h = 5381;
 		for(const auto& iter : key)
 		{
-			for(BoardTile i : iter)
+			for(int i : iter)
 			{
 				h *= 33;
-				h += char(i.id + '0');
+				h += char(i + '0');
 			}
 		}
 
@@ -161,10 +161,10 @@ private:
 
 private:
 
-	std::vector<std::vector<BoardTile>> m_board;
+	std::vector<std::vector<int>> m_board;
 	std::unordered_map<int,BoardPiece> m_pieces;
 
-	std::unordered_map<std::vector<std::vector<BoardTile>>, std::vector<BoardMove>, BoardMoveHash> m_validMoveCache[2];
+	std::unordered_map<std::vector<std::vector<int>>, std::vector<BoardMove>, BoardMoveHash> m_validMoveCache[2];
 
 	std::deque<BoardMove> m_moveHistory;
 

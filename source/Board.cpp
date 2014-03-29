@@ -18,11 +18,11 @@ ApplyMove::ApplyMove(const BoardMove* pMove, Board* pBoard) : m_pMove(pMove), m_
 
 	m_pBoard->m_moveHistory.push_front(*m_pMove);
 
-	m_oldIndex = m_pBoard->m_board[m_pMove->from.x - 1][m_pMove->from.y - 1].id;
-	m_newIndex = m_pBoard->m_board[m_pMove->to.x - 1][m_pMove->to.y - 1].id;
+	m_oldIndex = m_pBoard->m_board[m_pMove->from.x - 1][m_pMove->from.y - 1];
+	m_newIndex = m_pBoard->m_board[m_pMove->to.x - 1][m_pMove->to.y - 1];
 
-	m_pBoard->m_board[m_pMove->from.x - 1][m_pMove->from.y - 1].id = 0;
-	m_pBoard->m_board[m_pMove->to.x - 1][m_pMove->to.y - 1].id = m_oldIndex;
+	m_pBoard->m_board[m_pMove->from.x - 1][m_pMove->from.y - 1] = 0;
+	m_pBoard->m_board[m_pMove->to.x - 1][m_pMove->to.y - 1] = m_oldIndex;
 
 	m_LastMove = m_pBoard->m_LastMove;
 	m_pBoard->m_LastMove = *m_pMove;
@@ -43,6 +43,7 @@ ApplyMove::ApplyMove(const BoardMove* pMove, Board* pBoard) : m_pMove(pMove), m_
 	else if(m_pMove->specialMove == SpecialMove::Promotion)
 	{
 		pFrom->type = m_pMove->promotion;
+		//m_pBoard->m_board[m_pMove->to.x - 1][m_pMove->to.y - 1].type = pFrom->type;
 	}
 	else if(m_pMove->specialMove == SpecialMove::Castle)
 	{
@@ -94,8 +95,8 @@ ApplyMove::~ApplyMove()
 		m_pBoard->m_turnsToStalemate = m_oldTurnsToStalemate;
 	}
 
-	m_pBoard->m_board[m_pMove->from.x - 1][m_pMove->from.y - 1].id = m_oldIndex;
-	m_pBoard->m_board[m_pMove->to.x - 1][m_pMove->to.y - 1].id = m_newIndex;
+	m_pBoard->m_board[m_pMove->from.x - 1][m_pMove->from.y - 1] = m_oldIndex;
+	m_pBoard->m_board[m_pMove->to.x - 1][m_pMove->to.y - 1] = m_newIndex;
 
 	m_pBoard->m_LastMove = m_LastMove;
 
@@ -139,9 +140,9 @@ void Board::Update(int turnsToStalemate, const std::vector<Move>& moves, const s
 			m_kingPos[p.owner()] = {p.file(), p.rank()};
 		}
 
-		unsigned int index = p.id();
+		unsigned int index = p.id() * p.type();
 
-		m_board[p.file() - 1][p.rank() - 1] = {p.id(), p.type()};
+		m_board[p.file() - 1][p.rank() - 1] = index;
 		m_pieces.insert({index, {p, p.owner(), p.file(), p.rank(), p.hasMoved(), p.type()}});
 
 		//cout << index << endl;
@@ -189,7 +190,7 @@ int Board::GetWorth(int playerID, const std::function<int(const Board& board, co
 	{
 		for(auto subIter : iter)
 		{
-			auto iter = m_pieces.find(subIter.id);
+			auto iter = m_pieces.find(subIter);
 			if(iter != m_pieces.end())
 			{
 				const BoardPiece& piece = iter->second;
@@ -216,7 +217,7 @@ BoardPiece* Board::GetPiece(const ivec2 &pos)
 const BoardPiece* Board::GetPiece(const ivec2& pos) const
 {
 	assert(IsOnBoard(pos));
-	int id = m_board[pos.x - 1][pos.y - 1].id;
+	int id = m_board[pos.x - 1][pos.y - 1];
 
 	auto iter = m_pieces.find(id);
 	return (iter == m_pieces.end()) ? nullptr : &iter->second;
@@ -236,7 +237,7 @@ bool Board::IsTileEmpty(int file, int rank) const
 {
 	assert(IsOnBoard(file) && IsOnBoard(rank));
 
-	return m_board[file - 1][rank - 1].id == 0;
+	return m_board[file - 1][rank - 1] == 0;
 }
 
 bool Board::IsTileOwner(int file, int rank, int playerID) const
@@ -273,7 +274,7 @@ std::vector<BoardMove> Board::GetMoves(int playerID, bool bCheck)
 	{
 		for(auto subIter : iter)
 		{
-			auto iter = m_pieces.find(subIter.id);
+			auto iter = m_pieces.find(subIter);
 			if(iter != m_pieces.end())
 			{
 				const BoardPiece& piece = iter->second;
@@ -592,7 +593,7 @@ bool Board::IsNotEnoughPiecesStalemate() const
 	{
 		for(auto subIter : iter)
 		{
-			auto iter = m_pieces.find(subIter.id);
+			auto iter = m_pieces.find(subIter);
 			if(iter != m_pieces.end())
 			{
 				const BoardPiece& piece = iter->second;
@@ -618,7 +619,10 @@ bool Board::IsNotEnoughPiecesStalemate() const
 
 	// king against king
 	if(bOnlyKing[0] && bOnlyKing[1])
+	{
+		cout << "King vs. king stalemate detected!" << endl;
 		return true;
+	}
 
 	// king against king and bishop
 	if((bOnlyKing[0] && counters[1][1] == 0 && counters[1][0] == 1) ||
@@ -672,10 +676,9 @@ void Board::Clear()
 {
 	for(auto& fileIter : m_board)
 	{
-		for(BoardTile& rankIter : fileIter)
+		for(int& rankIter : fileIter)
 		{
-			rankIter.id = 0;
-			rankIter.type = 0;
+			rankIter = 0;
 		}
 	}
 
