@@ -88,7 +88,7 @@ const int ChessHeuristic::m_kingEndGameMoveTable[8][8] =
 int ChessHeuristic::operator ()(const Board& board, const std::vector<BoardMove>& moves, const BoardPiece& piece) const
 {
 	int worth = 0;
-	int rank = ((piece.owner == 0) ? piece.rank - 1 : 7 - piece.rank);
+	int rank = ((piece.owner == 1) ? piece.rank - 1 : 8 - piece.rank);
 	unsigned int piecesCount = board.GetNumPieces();
 	switch(piece.type)
 	{
