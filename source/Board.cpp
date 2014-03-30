@@ -258,7 +258,7 @@ bool Board::IsInCheckmate(int playerID)
 
 bool Board::IsInStalemate(int playerID)
 {
-	return IsThreeBoardStateStalemate() || IsNotEnoughPiecesStalemate() /*|| IsNoLegalMovesStalemate(!playerID)*/;
+	return IsThreeBoardStateStalemate() || IsNotEnoughPiecesStalemate() || IsNoLegalMovesStalemate(playerID);
 }
 
 unsigned int Board::GetNumPieces() const
@@ -587,14 +587,14 @@ bool Board::IsInCheck(int playerID)
 
 bool Board::IsNoLegalMovesStalemate(int playerID)
 {
-	bool bNoLegalMoves = !IsInCheck(playerID) && GetMoves(playerID).empty();
+	bool bNoLegalMoves = GetMoves(playerID).empty() && !IsInCheck(playerID);
 
-	if(bNoLegalMoves)
+	/*if(bNoLegalMoves)
 	{
 #ifdef DEBUG_OUTPUT
 		cout << "No legal moves detected" << endl;
 #endif
-	}
+	}*/
 
 	return bNoLegalMoves;
 }

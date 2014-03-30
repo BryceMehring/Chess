@@ -135,7 +135,7 @@ bool AI::MiniMax(int depth, int playerID, BoardMove& moveOut)
 
 float AI::MiniMax(int depth, int playerID, float a, float b, int color)
 {
-	if(m_board.IsInCheckmate(!playerID))
+	if(m_board.IsInCheckmate(color == 1 ? playerID : !playerID))
 		return color*10000.0f;
 
 	if(m_board.IsInStalemate(color == 1 ? playerID : !playerID))
