@@ -105,10 +105,10 @@ public:
 	bool IsOnBoard(const ivec2& pos) const;
 
 	// Returns true if the current tile is empty
-	bool IsTileEmpty(int file, int rank) const;
+	bool IsTileEmpty(const ivec2& pos) const;
 
 	// Returns true if we currently own the tile
-	bool IsTileOwner(int file, int rank, int playerID) const;
+	bool IsTileOwner(const ivec2& pos, int playerID) const;
 
 	// Returns true if the specified player is in checkmate
 	bool IsInCheckmate(int playerID);

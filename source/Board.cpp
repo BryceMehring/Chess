@@ -223,31 +223,31 @@ const BoardPiece* Board::GetPiece(const ivec2& pos) const
 	return (iter == m_pieces.end()) ? nullptr : &iter->second;
 }
 
-bool Board::IsOnBoard(int coord) const
+bool Board::IsOnBoard(int pos) const
 {
-	return (coord <= 8 && coord >= 1);
+	return (pos <= 8 && pos >= 1);
 }
 
-bool Board::IsOnBoard(const ivec2& coord) const
+bool Board::IsOnBoard(const ivec2& pos) const
 {
-	return IsOnBoard(coord.x) && IsOnBoard(coord.y);
+	return IsOnBoard(pos.x) && IsOnBoard(pos.y);
 }
 
-bool Board::IsTileEmpty(int file, int rank) const
+bool Board::IsTileEmpty(const ivec2& pos) const
 {
-	assert(IsOnBoard(file) && IsOnBoard(rank));
+	assert(IsOnBoard(pos));
 
-	return m_board[file - 1][rank - 1] == 0;
+	return m_board[pos.x - 1][pos.y - 1] == 0;
 }
 
-bool Board::IsTileOwner(int file, int rank, int playerID) const
+bool Board::IsTileOwner(const ivec2& pos, int playerID) const
 {
-	assert(IsOnBoard(file) && IsOnBoard(rank));
+	assert(IsOnBoard(pos));
 
-	if(IsTileEmpty(file,rank))
+	if(IsTileEmpty(pos))
 		return false;
 
-	const BoardPiece* pPiece = GetPiece({file, rank});
+	const BoardPiece* pPiece = GetPiece(pos);
 	return pPiece->owner == playerID;
 }
 
@@ -314,7 +314,7 @@ void Board::GeneratePawnMoves(const BoardPiece& piece, bool bCheck, std::vector<
 	if(IsOnBoard(iNewRank))
 	{
 		// First check if we can move to the tile in front of us
-		if(IsTileEmpty(piece.file,iNewRank))
+		if(IsTileEmpty({piece.file,iNewRank}))
 		{
 			// At this point, it is possible for us to promote
 			GeneratePromotedPawnMoves({piece.file, piece.rank}, {piece.file, iNewRank}, piece.owner, bCheck, moves);
@@ -325,7 +325,7 @@ void Board::GeneratePawnMoves(const BoardPiece& piece, bool bCheck, std::vector<
 				int iDoubleMoveRank = iNewRank + ((piece.owner == 0) ? 1 : -1);
 
 				// First check if we can move to the tile in front of us
-				if(IsTileEmpty(piece.file,iDoubleMoveRank))
+				if(IsTileEmpty({piece.file,iDoubleMoveRank}))
 				{
 					ivec2 from = {piece.file, piece.rank};
 					ivec2 to = {piece.file, iDoubleMoveRank};
@@ -363,7 +363,7 @@ void Board::GeneratePawnMoves(const BoardPiece& piece, bool bCheck, std::vector<
 		{
 			if(IsOnBoard(iNewFile))
 			{
-				if(!IsTileEmpty(iNewFile,iNewRank) && !IsTileOwner(iNewFile, iNewRank, piece.owner))
+				if(!IsTileEmpty({iNewFile,iNewRank}) && !IsTileOwner({iNewFile, iNewRank}, piece.owner))
 				{
 					GeneratePromotedPawnMoves({piece.file, piece.rank}, {iNewFile, iNewRank}, piece.owner, bCheck, moves);
 				}
@@ -428,14 +428,14 @@ void Board::GenerateDirectionMoves(const BoardPiece& piece, bool bCheck, std::ve
 			pos.x += dir[i].x;
 			pos.y += dir[i].y;
 
-			if(IsOnBoard(pos) && !IsTileOwner(pos.x,pos.y, piece.owner))
+			if(IsOnBoard(pos) && !IsTileOwner(pos, piece.owner))
 			{
 				// If the tile is empty or is an enemy
 				ivec2 from = {piece.file, piece.rank};
 				AddMove({from, pos, GetPieceType(pos)}, bCheck, moves);
 			}
 
-		} while(IsOnBoard(pos) && IsTileEmpty(pos.x,pos.y));
+		} while(IsOnBoard(pos) && IsTileEmpty(pos));
 	}
 }
 
@@ -465,7 +465,7 @@ void Board::GenerateDiscreteMoves(const BoardPiece& piece, bool bCheck, std::vec
 		pos.x += move.x;
 		pos.y += move.y;
 
-		if(IsOnBoard(pos) && !IsTileOwner(pos.x, pos.y, piece.owner))
+		if(IsOnBoard(pos) && !IsTileOwner(pos, piece.owner))
 		{
 			ivec2 from = {piece.file, piece.rank};
 			AddMove({from, pos, GetPieceType(pos)}, bCheck, moves);
@@ -499,7 +499,7 @@ void Board::GenerateCastleMove(const BoardPiece& piece, bool bCheck, std::vector
 				do
 				{
 					pos.x += dir[i];
-					bValidState &= IsTileEmpty(pos.x,pos.y);
+					bValidState &= IsTileEmpty(pos);
 
 					if(bValidState && (pos.x == 4 || pos.x == 6))
 					{
@@ -530,7 +530,7 @@ void Board::GenerateCastleMove(const BoardPiece& piece, bool bCheck, std::vector
 					// Check to make sure that there is not a pawn attacking that did not get picked up in the moves previously generated
 					for(auto iter : invalidPawnPositions[piece.owner])
 					{
-						bValidState &= !(IsTileOwner(iter.x, iter.y, !piece.owner) && GetPieceType(iter) == 'P');
+						bValidState &= !(IsTileOwner(iter, !piece.owner) && GetPieceType(iter) == 'P');
 					}
 
 					if(bValidState)
