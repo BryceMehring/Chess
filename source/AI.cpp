@@ -71,13 +71,26 @@ bool AI::MiniMax(BoardMove& moveOut)
 {
 	bool bFoundMove = false;
 	unsigned int d = 1;
+	unsigned int depthLimit = m_depth;
 
 	m_minimaxTimer.Reset();
 	m_minimaxTimer.Start();
 
 	m_bestIndex = 0;
 
-	while(d <= m_depth && ((m_minimaxTimer.GetTime()) < 9000000000))
+	// If the game is almost going to time out,
+	// do not search as deep
+	if(players[playerID()].time() < 60.0f)
+	{
+		depthLimit /= 2;
+
+		if(depthLimit == 0)
+		{
+			depthLimit = 1;
+		}
+	}
+
+	while(d <= depthLimit && ((m_minimaxTimer.GetTime()) < 9000000000))
 	{
 		bFoundMove |= MiniMax(d, playerID(), moveOut);
 		cout << "Depth " << d << " time: " << m_minimaxTimer.GetTime() << endl;
