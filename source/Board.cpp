@@ -514,9 +514,31 @@ void Board::GenerateCastleMove(const BoardPiece& piece, bool bCheck, std::vector
 				// If nothing is in the way of the rook and the king and the king cannot be attacked on either side
 				if(bValidState)
 				{
-					ivec2 from = {piece.file, piece.rank};
-					ivec2 to = {piece.file + dir[i] * 2, piece.rank};
-					AddMove({from, to, 0, 'Q', SpecialMove::Castle}, bCheck, moves);
+
+					const ivec2 invalidPawnPositions[2][2] =
+					{
+						{
+							{7,1},
+							{2,1}
+						},
+						{
+							{7,7},
+							{2,7}
+						}
+					};
+
+					// Check to make sure that there is not a pawn attacking that did not get picked up in the moves previously generated
+					for(auto iter : invalidPawnPositions[piece.owner])
+					{
+						bValidState &= !(IsTileOwner(iter.x, iter.y, !piece.owner) && GetPieceType(iter) == 'P');
+					}
+
+					if(bValidState)
+					{
+						ivec2 from = {piece.file, piece.rank};
+						ivec2 to = {piece.file + dir[i] * 2, piece.rank};
+						AddMove({from, to, 0, 'Q', SpecialMove::Castle}, bCheck, moves);
+					}
 				}
 			}
 		}
