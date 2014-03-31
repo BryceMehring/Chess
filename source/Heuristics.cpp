@@ -94,32 +94,32 @@ int ChessHeuristic::operator ()(const Board& board, const std::vector<BoardMove>
 	{
 		case 'P':
 			worth += 100;
-			worth += m_pawnMoveTable[rank][piece.file];
+			worth += m_pawnMoveTable[rank][piece.file - 1];
 			break;
 		case 'N':
 			worth += 320;
-			worth += m_knightMoveTable[rank][piece.file];
+			worth += m_knightMoveTable[rank][piece.file - 1];
 			break;
 		case 'B':
 			worth += 330;
-			worth += m_bishopMoveTable[rank][piece.file];
+			worth += m_bishopMoveTable[rank][piece.file - 1];
 			break;
 		case 'R':
 			worth += 550;
-			worth += m_rookMoveTable[rank][piece.file];
+			worth += m_rookMoveTable[rank][piece.file - 1];
 			break;
 		case 'Q':
 			worth += 900;
-			worth += m_queenMoveTable[rank][piece.file];
+			worth += m_queenMoveTable[rank][piece.file - 1];
 			break;
 		case 'K':
 			if(piecesCount > 16)
 			{
-				worth += m_kingMiddleGameTable[rank][piece.file];
+				worth += m_kingMiddleGameTable[rank][piece.file - 1];
 			}
 			else
 			{
-				worth += m_kingEndGameMoveTable[rank][piece.file];
+				worth += m_kingEndGameMoveTable[rank][piece.file - 1];
 			}
 			break;
 		default:
