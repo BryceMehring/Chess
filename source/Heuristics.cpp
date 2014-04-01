@@ -141,5 +141,7 @@ int ChessHeuristic::operator ()(const Board& board, const std::vector<BoardMove>
 		}
 	}
 
+	worth += moves.size();
+
 	return worth;
 }
