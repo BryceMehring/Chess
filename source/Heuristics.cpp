@@ -87,45 +87,7 @@ const int ChessHeuristic::m_kingEndGameMoveTable[8][8] =
 
 int ChessHeuristic::operator ()(const Board& board, const std::vector<BoardMove>& moves, const BoardPiece& piece) const
 {
-	int worth = 0;
-	int rank = ((piece.owner == 1) ? piece.rank - 1 : 8 - piece.rank);
-	unsigned int piecesCount = board.GetNumPieces();
-	switch(piece.type)
-	{
-		case 'P':
-			worth += 100;
-			worth += m_pawnMoveTable[rank][piece.file - 1];
-			break;
-		case 'N':
-			worth += 320;
-			worth += m_knightMoveTable[rank][piece.file - 1];
-			break;
-		case 'B':
-			worth += 330;
-			worth += m_bishopMoveTable[rank][piece.file - 1];
-			break;
-		case 'R':
-			worth += 550;
-			worth += m_rookMoveTable[rank][piece.file - 1];
-			break;
-		case 'Q':
-			worth += 900;
-			worth += m_queenMoveTable[rank][piece.file - 1];
-			break;
-		case 'K':
-			if(piecesCount > 16)
-			{
-				worth += m_kingMiddleGameTable[rank][piece.file - 1];
-			}
-			else
-			{
-				worth += m_kingEndGameMoveTable[rank][piece.file - 1];
-			}
-			break;
-		default:
-			assert("Invalid piece type" && false);
-			break;
-	}
+	int value = GetMaterialValue(board, piece);
 
 	for(const BoardMove& move : moves)
 	{
@@ -136,12 +98,62 @@ int ChessHeuristic::operator ()(const Board& board, const std::vector<BoardMove>
 		{
 			if(move.capturedType != 0)
 			{
-				worth += 50.0f;
+				switch(move.capturedType)
+				{
+					const BoardPiece* pTarget = board.GetPiece(move.to);
+					assert(pTarget != nullptr);
+
+					value += GetMaterialValue(board, *pTarget) / 16;
+				}
 			}
 		}
 	}
 
-	worth += moves.size();
+	value += moves.size();
 
-	return worth;
+	return value;
+}
+
+int ChessHeuristic::GetMaterialValue(const Board& board, const BoardPiece& piece) const
+{
+	int value = 0;
+	int rank = ((piece.owner == 1) ? piece.rank - 1 : 8 - piece.rank);
+
+	switch(piece.type)
+	{
+		case 'P':
+			value += 100;
+			value += m_pawnMoveTable[rank][piece.file - 1];
+			break;
+		case 'N':
+			value += 320;
+			value += m_knightMoveTable[rank][piece.file - 1];
+			break;
+		case 'B':
+			value += 330;
+			value += m_bishopMoveTable[rank][piece.file - 1];
+			break;
+		case 'R':
+			value += 550;
+			value += m_rookMoveTable[rank][piece.file - 1];
+			break;
+		case 'Q':
+			value += 900;
+			value += m_queenMoveTable[rank][piece.file - 1];
+			break;
+		case 'K':
+			if(board.GetNumPieces() > 16)
+			{
+				value += m_kingMiddleGameTable[rank][piece.file - 1];
+			}
+			else
+			{
+				value += m_kingEndGameMoveTable[rank][piece.file - 1];
+			}
+			break;
+		default:
+			assert("Invalid piece type" && false);
+			break;
+	}
+	return value;
 }
