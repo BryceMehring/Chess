@@ -11,7 +11,7 @@ using std::cout;
 using std::endl;
 using namespace std::placeholders;
 
-AI::AI(Connection* conn, unsigned int depth) : BaseAI(conn), m_totalTime(0), m_count(1), m_depth(depth), m_bestIndex(0) {}
+AI::AI(Connection* conn, unsigned int depth) : BaseAI(conn), m_totalTime(0), m_count(1), m_depth(depth), m_bestIndex(0)/*, m_bestMoves(depth), m_bestUsableMoves(depth)*/ {}
 
 const char* AI::username()
 {
@@ -73,6 +73,10 @@ bool AI::MiniMax(BoardMove& moveOut)
 	unsigned int d = 1;
 	unsigned int depthLimit = m_depth;
 
+	/*m_bestMoves.swap(m_bestUsableMoves);
+	m_bestMoves.clear();
+	m_bestMoves.resize(m_depth);*/
+
 	m_minimaxTimer.Reset();
 	m_minimaxTimer.Start();
 
@@ -80,7 +84,7 @@ bool AI::MiniMax(BoardMove& moveOut)
 
 	// If the game is almost going to time out,
 	// do not search as deep
-	if(players[playerID()].time() < 60.0f)
+	if(players[playerID()].time() < 20.0f)
 	{
 		depthLimit /= 2;
 
@@ -92,8 +96,14 @@ bool AI::MiniMax(BoardMove& moveOut)
 
 	while(d <= depthLimit && ((m_minimaxTimer.GetTime()) < 9000000000))
 	{
-		bFoundMove |= MiniMax(d, playerID(), moveOut);
-		cout << "Depth " << d << " time: " << m_minimaxTimer.GetTime() << endl;
+		bool bFoundAtDepth = MiniMax(d, playerID(), moveOut);
+		if(bFoundAtDepth)
+		{
+			cout << "Depth " << d << " time: " << m_minimaxTimer.GetTime() << endl;
+			bFoundMove = true;
+
+			//m_bestMoves.swap(m_bestUsableMoves);
+		}
 		++d;
 	}
 
@@ -157,14 +167,16 @@ float AI::MiniMax(int depth, int playerID, float a, float b, int color)
 	if(depth <= 0)
 		return color*m_board.GetWorth(playerID, ChessHeuristic());
 
-	const std::vector<BoardMove> enemyMoves = m_board.GetMoves(color == 1 ? !playerID : playerID);
+	//const std::vector<BoardMove> enemyMoves = m_board.GetMoves(color == 1 ? !playerID : playerID);
 	std::vector<BoardMove> userMoves =  m_board.GetMoves(color == 1 ? playerID : !playerID);
 	std::partition(userMoves.begin(), userMoves.end(),[&](const BoardMove& a) -> bool
 	{
 		if(a.capturedType != 0)
 			return true;
 
-		bool bUnderAttack = false;
+		return false;
+
+		/*bool bUnderAttack = false;
 		for(const BoardMove& m : enemyMoves)
 		{
 			if(m.to == a.from)
@@ -172,10 +184,12 @@ float AI::MiniMax(int depth, int playerID, float a, float b, int color)
 				bUnderAttack = true;
 				break;
 			}
-		}
+		}*/
 
-		return bUnderAttack;
+		//return bUnderAttack;
 	});
+
+	//std::swap(m_bestUsableMoves[depth - 1], m_bestUsableMoves[0]);
 
 	for(unsigned int i = 0; i < userMoves.size(); ++i)
 	{
@@ -187,7 +201,10 @@ float AI::MiniMax(int depth, int playerID, float a, float b, int color)
 			return b;   //  fail hard beta-cutoff
 
 		if(score > a)
+		{
+			//m_bestMoves[depth - 1] = i;
 			a = score; // alpha acts like max in MiniMax
+		}
 	}
 
 	return a;

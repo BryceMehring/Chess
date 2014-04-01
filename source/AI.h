@@ -35,6 +35,9 @@ private:
   unsigned int m_depth;
   unsigned int m_bestIndex;
 
+  //std::vector<unsigned int> m_bestMoves;
+  //std::vector<unsigned int> m_bestUsableMoves;
+
   Timer m_minimaxTimer;
 };
 
