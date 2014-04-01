@@ -32,6 +32,10 @@ public:
 
 private:
 
+	void ApplyCastleMove(bool bApply);
+
+private:
+
 	const BoardMove* m_pMove;
 	Board* m_pBoard;
 

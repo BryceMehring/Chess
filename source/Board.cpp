@@ -43,11 +43,10 @@ ApplyMove::ApplyMove(const BoardMove* pMove, Board* pBoard) : m_pMove(pMove), m_
 	else if(m_pMove->specialMove == SpecialMove::Promotion)
 	{
 		pFrom->type = m_pMove->promotion;
-		//m_pBoard->m_board[m_pMove->to.x - 1][m_pMove->to.y - 1].type = pFrom->type;
 	}
 	else if(m_pMove->specialMove == SpecialMove::Castle)
 	{
-		// Todo: implement this
+		ApplyCastleMove(true);
 	}
 
 	// Turns left for stalemate logic
@@ -82,7 +81,7 @@ ApplyMove::~ApplyMove()
 	}
 	else if(m_pMove->specialMove == SpecialMove::Castle)
 	{
-		// Todo: implement this
+		ApplyCastleMove(false);
 	}
 
 	// Turns left for stalemate logic
@@ -103,6 +102,32 @@ ApplyMove::~ApplyMove()
 	pFrom->file = m_pMove->from.x;
 	pFrom->rank = m_pMove->from.y;
 	pFrom->hasMoved = m_hasMoved;
+}
+
+void ApplyMove::ApplyCastleMove(bool bApply)
+{
+	int rookFile = 1;
+	int rookToFile = 4;
+
+	if((m_pMove->to.x - m_pMove->from.x) > 0)
+	{
+		// Rook will move to the left
+		rookFile = 8;
+		rookToFile = 6;
+	}
+
+	if(!bApply)
+	{
+		std::swap(rookFile, rookToFile);
+	}
+
+	BoardPiece* pRook = m_pBoard->GetPiece({rookFile,m_pMove->from.y});
+	assert(pRook != nullptr);
+
+	pRook->file = rookToFile;
+	pRook->hasMoved = bApply;
+
+	std::swap(m_pBoard->m_board[rookFile - 1][m_pMove->from.y - 1], m_pBoard->m_board[rookToFile - 1][m_pMove->from.y - 1]);
 }
 
 bool operator ==(const BoardTile& a, const BoardTile& b)
@@ -514,7 +539,6 @@ void Board::GenerateCastleMove(const BoardPiece& piece, bool bCheck, std::vector
 				// If nothing is in the way of the rook and the king and the king cannot be attacked on either side
 				if(bValidState)
 				{
-
 					const ivec2 invalidPawnPositions[2][2] =
 					{
 						{
