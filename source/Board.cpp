@@ -33,6 +33,17 @@ ApplyMove::ApplyMove(const BoardMove* pMove, Board* pBoard) : m_pMove(pMove), m_
 	m_hasMoved = pFrom->hasMoved;
 	pFrom->hasMoved = 1;
 
+	// Turns left for stalemate logic
+	if(m_pMove->capturedType == 0 && pFrom->type != 'P')
+	{
+		m_pBoard->m_turnsToStalemate--;
+	}
+	else
+	{
+		m_oldTurnsToStalemate = m_pBoard->m_turnsToStalemate;
+		m_pBoard->m_turnsToStalemate = 100;
+	}
+
 	// Keep track of the kings
 	if(pFrom->type == 'K')
 	{
@@ -47,17 +58,6 @@ ApplyMove::ApplyMove(const BoardMove* pMove, Board* pBoard) : m_pMove(pMove), m_
 	else if(m_pMove->specialMove == SpecialMove::Castle)
 	{
 		ApplyCastleMove(true);
-	}
-
-	// Turns left for stalemate logic
-	if(m_pMove->capturedType == 0 && pFrom->type != 'P')
-	{
-		m_pBoard->m_turnsToStalemate--;
-	}
-	else
-	{
-		m_oldTurnsToStalemate = m_pBoard->m_turnsToStalemate;
-		m_pBoard->m_turnsToStalemate = 100;
 	}
 }
 
@@ -365,6 +365,7 @@ void Board::GeneratePawnMoves(const BoardPiece& piece, bool bCheck, std::vector<
 			if(abs(m_LastMove.to.y - m_LastMove.from.y) == 2)
 			{
 				BoardPiece* pLastPieceMoved = GetPiece(m_LastMove.to);
+				assert(pLastPieceMoved != nullptr);
 
 				if(pLastPieceMoved->type == int('P'))
 				{
@@ -598,15 +599,15 @@ void Board::AddMove(const BoardMove& move, bool bCheck, std::vector<BoardMove>& 
 bool Board::IsInCheck(int playerID)
 {
 	// Generate moves for the other team
-	std::vector<BoardMove> m_validMoves = GetMoves(!playerID, false);
+	std::vector<BoardMove> validMoves = GetMoves(!playerID, false);
 
 	// Check if any of their pieces are attacking our king
-	auto iter = std::find_if(m_validMoves.begin(),m_validMoves.end(),[&](const BoardMove& m) -> bool
+	auto iter = std::find_if(validMoves.begin(),validMoves.end(),[&](const BoardMove& m) -> bool
 	{
 		return (m.to.x == m_kingPos[playerID].x) && (m.to.y == m_kingPos[playerID].y);
 	});
 
-	return iter != m_validMoves.end();
+	return iter != validMoves.end();
 }
 
 bool Board::IsNoLegalMovesStalemate(int playerID)

@@ -16,7 +16,7 @@ class BoardPiece;
 
 struct BoardMove
 {
-	BoardMove() : promotion('Q'), specialMove(SpecialMove::None)
+	BoardMove() : promotion('Q'), capturedType(0), specialMove(SpecialMove::None)
 	{
 	}
 

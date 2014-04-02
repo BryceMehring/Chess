@@ -102,6 +102,8 @@ public:
 	BoardPiece* GetPiece(const ivec2& pos);
 	const BoardPiece* GetPiece(const ivec2& pos) const;
 
+	const std::vector<std::vector<int>>& GetState() const { return m_board; }
+
 	// Returns true if pos is on the board
 	bool IsOnBoard(int pos) const;
 
