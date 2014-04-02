@@ -48,6 +48,8 @@ bool AI::run()
 		BoardPiece* pPiece = m_board.GetPiece(bestMove.from);
 		assert(pPiece != nullptr);
 		pPiece->piece.move(bestMove.to.x, bestMove.to.y, bestMove.promotion);
+
+		// Spawn a new thread to think while the enemy is moving
 	}
 
 #ifdef DEBUG_OUTPUT
@@ -158,7 +160,27 @@ bool AI::MiniMax(int depth, int playerID, BoardMove& moveOut)
 
 float AI::MiniMax(int depth, int playerID, float a, float b, int color)
 {
-	if(m_board.IsInCheckmate(color == 1 ? playerID : !playerID))
+	/*float alphaOrig = a;
+
+	auto ttIter = m_transpositionTable.find(m_board.GetState());
+	if(ttIter != m_transpositionTable.end())
+	{
+		const TranspositionTableEntry& ttEntry = ttIter->second;
+		if(ttEntry.depth >= (unsigned int)depth)
+		{
+			if(ttEntry.flag == TranspositionTableFlag::EXACT)
+				return ttEntry.value;
+			else if(ttEntry.flag == TranspositionTableFlag::LOWERBOUND)
+				a = std::max(a, ttEntry.value);
+			else if(ttEntry.flag == TranspositionTableFlag::UPPERBOUND)
+				b = std::min(b, ttEntry.value);
+
+			if(a >= b)
+				return ttEntry.value;
+		}
+	}*/
+
+	if(m_board.IsInCheckmate(color == 1 ? !playerID : playerID))
 		return color*10000.0f;
 
 	if(m_board.IsInStalemate(color == 1 ? playerID : !playerID))
@@ -184,30 +206,46 @@ float AI::MiniMax(int depth, int playerID, float a, float b, int color)
 				bUnderAttack = true;
 				break;
 			}
-		}*/
+		}
 
-		//return bUnderAttack;
+		return bUnderAttack;*/
 	});
 
 	//std::swap(m_bestUsableMoves[depth - 1], m_bestUsableMoves[0]);
+
+	float bestValue = -FLT_MAX;
 
 	for(unsigned int i = 0; i < userMoves.size(); ++i)
 	{
 		ApplyMove theMove(&userMoves[i], &m_board);
 
 		float score = -MiniMax(depth - 1, playerID, -b, -a, -color);
+		bestValue = std::max(bestValue, score);
+		a = std::max(a, score);
 
-		if(score >= b)
-			return b;   //  fail hard beta-cutoff
-
-		if(score > a)
-		{
-			//m_bestMoves[depth - 1] = i;
-			a = score; // alpha acts like max in MiniMax
-		}
+		if(a >= b)
+			break;
 	}
 
-	return a;
+	/*TranspositionTableEntry tableEntry;
+	tableEntry.depth = depth;
+	tableEntry.value = bestValue;
+	if(bestValue <= alphaOrig)
+	{
+		tableEntry.flag = TranspositionTableFlag::UPPERBOUND;
+	}
+	else if(bestValue >= b)
+	{
+		tableEntry.flag = TranspositionTableFlag::LOWERBOUND;
+	}
+	else
+	{
+		tableEntry.flag = TranspositionTableFlag::EXACT;
+	}
+
+	m_transpositionTable[m_board.GetState()] = tableEntry;*/
+
+	return bestValue;
 }
 
 void AI::DrawBoard() const

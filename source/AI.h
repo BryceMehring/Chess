@@ -7,6 +7,20 @@
 #include <iostream>
 #include <random>
 
+enum class TranspositionTableFlag
+{
+	UPPERBOUND,
+	LOWERBOUND,
+	EXACT
+};
+
+struct TranspositionTableEntry
+{
+	float value;
+	unsigned int depth;
+	TranspositionTableFlag flag;
+};
+
 ///The class implementing gameplay logic.
 class AI: public BaseAI
 {
@@ -34,6 +48,8 @@ private:
   unsigned int m_count;
   unsigned int m_depth;
   unsigned int m_bestIndex;
+
+  std::unordered_map<std::vector<std::vector<int>>, TranspositionTableEntry, BoardMoveHash> m_transpositionTable;
 
   //std::vector<unsigned int> m_bestMoves;
   //std::vector<unsigned int> m_bestUsableMoves;
