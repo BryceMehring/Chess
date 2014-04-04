@@ -283,7 +283,7 @@ bool Board::IsInCheckmate(int playerID)
 
 bool Board::IsInStalemate(int playerID)
 {
-	return IsThreeBoardStateStalemate() || IsNotEnoughPiecesStalemate() || IsNoLegalMovesStalemate(playerID);
+	return (m_turnsToStalemate == 0) || IsThreeBoardStateStalemate() || IsNotEnoughPiecesStalemate() || IsNoLegalMovesStalemate(playerID);
 }
 
 unsigned int Board::GetNumPieces() const
