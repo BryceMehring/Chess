@@ -14,11 +14,11 @@ class Player {
 
   // Accessors
   ///Unique Identifier
-  int id();
+  int id() const;
   ///Player's Name
-  char* playerName();
+  char* playerName() const;
   ///Time remaining, updated at start of turn
-  float time();
+  float time() const;
 
   // Actions
 

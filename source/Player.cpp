@@ -9,22 +9,20 @@ Player::Player(_Player* pointer)
     ptr = (void*) pointer;
 }
 
-int Player::id()
+int Player::id() const
 {
   return ((_Player*)ptr)->id;
 }
 
-char* Player::playerName()
+char* Player::playerName() const
 {
   return ((_Player*)ptr)->playerName;
 }
 
-float Player::time()
+float Player::time() const
 {
   return ((_Player*)ptr)->time;
 }
-
-
 
 
 std::ostream& operator<<(std::ostream& stream,Player ob)

@@ -1,4 +1,4 @@
 #!/bin/bash
 
-./client "$@"
+eval ./client "$@"
 echo $?

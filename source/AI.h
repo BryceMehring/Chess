@@ -40,6 +40,8 @@ private:
   bool MiniMax(int depth, int playerID, BoardMove& moveOut);
   float MiniMax(int depth, int playerID, float a, float b, int color);
 
+  std::uint64_t GetTimePerMove() const;
+
   // Draws the chess board to standard output
   void DrawBoard() const;
 

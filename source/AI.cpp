@@ -84,27 +84,13 @@ bool AI::MiniMax(BoardMove& moveOut)
 
 	m_bestIndex = 0;
 
-	// If the game is almost going to time out,
-	// do not search as deep
-	if(players[playerID()].time() < 20.0f)
-	{
-		depthLimit /= 2;
-
-		if(depthLimit == 0)
-		{
-			depthLimit = 1;
-		}
-	}
-
-	while(d <= depthLimit && ((m_minimaxTimer.GetTime()) < 9000000000))
+	while(d <= depthLimit && ((m_minimaxTimer.GetTime()) < (GetTimePerMove() * 1000000000)))
 	{
 		bool bFoundAtDepth = MiniMax(d, playerID(), moveOut);
 		if(bFoundAtDepth)
 		{
 			cout << "Depth " << d << " time: " << m_minimaxTimer.GetTime() << endl;
 			bFoundMove = true;
-
-			//m_bestMoves.swap(m_bestUsableMoves);
 		}
 		++d;
 	}
@@ -140,7 +126,7 @@ bool AI::MiniMax(int depth, int playerID, BoardMove& moveOut)
 			}
 
 			// If we have ran out of time
-			if(bFoundMove && ((m_minimaxTimer.GetTime()) >= 9000000000))
+			if(bFoundMove && ((m_minimaxTimer.GetTime()) >= (GetTimePerMove() * 1000000000)))
 			{
 				bFoundMove = false;
 				break;
@@ -160,9 +146,9 @@ bool AI::MiniMax(int depth, int playerID, BoardMove& moveOut)
 
 float AI::MiniMax(int depth, int playerID, float a, float b, int color)
 {
-	/*float alphaOrig = a;
+	float alphaOrig = a;
 
-	auto ttIter = m_transpositionTable.find(m_board.GetState());
+	/*auto ttIter = m_transpositionTable.find(m_board.GetState());
 	if(ttIter != m_transpositionTable.end())
 	{
 		const TranspositionTableEntry& ttEntry = ttIter->second;
@@ -180,10 +166,10 @@ float AI::MiniMax(int depth, int playerID, float a, float b, int color)
 		}
 	}*/
 
-	if(m_board.IsInCheckmate(color == 1 ? !playerID : playerID))
+	if(m_board.IsInCheckmate(!playerID))
 		return color*10000.0f;
 
-	if(m_board.IsInStalemate(color == 1 ? playerID : !playerID))
+	if(m_board.IsInStalemate(!playerID))
 		return -color*500.0f;
 
 	if(depth <= 0)
@@ -246,6 +232,21 @@ float AI::MiniMax(int depth, int playerID, float a, float b, int color)
 	m_transpositionTable[m_board.GetState()] = tableEntry;*/
 
 	return bestValue;
+}
+
+std::uint64_t AI::GetTimePerMove() const
+{
+	std::uint64_t time = (std::uint64_t)players[playerID()].time() / 60;
+
+	// If the game is almost going to time out,
+	// do not search as deep
+	if(time < 1)
+	{
+		time = 3;
+	}
+
+	cout << "Time per move: " << time << endl;
+	return time;
 }
 
 void AI::DrawBoard() const

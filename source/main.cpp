@@ -20,7 +20,7 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  unsigned int depth = 7;
+  unsigned int depth = 8;
   if(argc > 3)
   {
 	depth = atoi(argv[3]);
