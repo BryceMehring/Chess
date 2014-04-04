@@ -98,18 +98,15 @@ int ChessHeuristic::operator ()(const Board& board, const std::vector<BoardMove>
 		{
 			if(move.capturedType != 0)
 			{
-				switch(move.capturedType)
-				{
-					const BoardPiece* pTarget = board.GetPiece(move.to);
-					assert(pTarget != nullptr);
+				const BoardPiece* pTarget = board.GetPiece(move.to);
+				assert(pTarget != nullptr);
 
-					value += GetMaterialValue(board, *pTarget) / 16;
-				}
+				value += GetMaterialValue(board, *pTarget) / 16;
 			}
 		}
 	}
 
-	value += moves.size();
+	value += moves.size() / 2;
 
 	return value;
 }
