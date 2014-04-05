@@ -99,9 +99,10 @@ int ChessHeuristic::operator ()(const Board& board, const std::vector<BoardMove>
 			if(move.capturedType != 0)
 			{
 				const BoardPiece* pTarget = board.GetPiece(move.to);
-				assert(pTarget != nullptr);
-
-				value += GetMaterialValue(board, *pTarget) / 16;
+				if(pTarget != nullptr)
+				{
+					value += GetMaterialValue(board, *pTarget) / 16;
+				}
 			}
 		}
 	}
