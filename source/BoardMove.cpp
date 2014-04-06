@@ -16,11 +16,6 @@ std::ostream& operator<<(std::ostream& stream, const BoardMove& move)
 		spacing = 'x';
 	}
 
-	if(move.capturedType != 'P')
-	{
-		stream << char(move.capturedType);
-	}
-
 	if(move.specialMove != SpecialMove::Castle)
 	{
 		stream << NumberToLetter(move.from.x) << move.from.y << spacing << NumberToLetter(move.to.x) << move.to.y;

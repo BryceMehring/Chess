@@ -12,7 +12,7 @@ using std::endl;
 using namespace std::placeholders;
 
 AI::AI(Connection* conn, unsigned int depth) : BaseAI(conn), m_totalTime(0), m_count(1),
-	m_depth(depth), m_bestIndex(0), m_bInCheckmate(false) {}
+	m_depth(depth), m_bInCheckmate(false) {}
 
 const char* AI::username()
 {
@@ -79,19 +79,34 @@ bool AI::MiniMax(BoardMove& moveOut)
 	m_minimaxTimer.Reset();
 	m_minimaxTimer.Start();
 
-	m_bestIndex = 0;
 	m_bInCheckmate = false;
 
-	while(d <= m_depth && ((m_minimaxTimer.GetTime()) < GetTimePerMove()) && (!m_bInCheckmate))
+	while((d <= m_depth) && ((m_minimaxTimer.GetTime()) < GetTimePerMove()) && (!m_bInCheckmate))
 	{
 		bool bFoundAtDepth = MiniMax(d, playerID(), moveOut);
 		if(bFoundAtDepth)
 		{
+#ifdef DEBUG_OUTPUT
 			cout << "Depth " << d << " time: " << m_minimaxTimer.GetTime() << endl;
+#endif
 			bFoundMove = true;
 		}
 		++d;
 	}
+
+#ifdef DEBUG_OUTPUT
+	if(bFoundMove)
+	{
+		cout << "Valid Moves: " << endl;
+		for(auto iter : m_rootMoves)
+		{
+			if(iter.from == moveOut.from)
+			{
+				cout << iter << endl;
+			}
+		}
+	}
+#endif
 
 	return bFoundMove;
 }
@@ -100,20 +115,19 @@ bool AI::MiniMax(int depth, int playerID, BoardMove& moveOut)
 {
 	bool bFoundMove = false;
 
-	std::vector<BoardMove> userMoves =  m_board.GetMoves(playerID);
-	if(!userMoves.empty())
+	m_rootMoves = m_board.GetMoves(playerID);
+	if(!m_rootMoves.empty())
 	{
 		unsigned int index = 0;
 
-		float a = std::numeric_limits<int>::min();
-		float b = std::numeric_limits<int>::max();
+		int a = std::numeric_limits<int>::min();
+		int b = std::numeric_limits<int>::max();
 
-		std::swap(userMoves[0], userMoves[m_bestIndex]);
-		for(unsigned int i = 0; i < userMoves.size(); ++i)
+		for(unsigned int i = 0; i < m_rootMoves.size(); ++i)
 		{
-			ApplyMove theMove(&userMoves[i], &m_board);
+			ApplyMove theMove(&m_rootMoves[i], &m_board);
 
-			float val = MiniMax(depth - 1, playerID, a, b, -1);
+			int val = MiniMax(depth - 1, playerID, a, b, -1);
 
 			// If the new move is better than the last
 			if(val > a)
@@ -121,7 +135,10 @@ bool AI::MiniMax(int depth, int playerID, BoardMove& moveOut)
 				index = i;
 				a = val;
 				bFoundMove = true;
+
+#ifdef DEBUG_OUTPUT
 				cout << val << endl;
+#endif
 			}
 
 			// If we have ran out of time
@@ -134,8 +151,7 @@ bool AI::MiniMax(int depth, int playerID, BoardMove& moveOut)
 
 		if(bFoundMove)
 		{
-			moveOut = userMoves[index];
-			m_bestIndex = index;
+			moveOut = m_rootMoves[index];
 		}
 	}
 

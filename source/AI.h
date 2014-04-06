@@ -50,10 +50,11 @@ private:
   std::uint64_t m_totalTime;
   unsigned int m_count;
   unsigned int m_depth;
-  unsigned int m_bestIndex;
   bool m_bInCheckmate;
 
-  std::unordered_map<std::vector<std::vector<int>>, TranspositionTableEntry, BoardMoveHash> m_transpositionTable;
+  std::vector<BoardMove> m_rootMoves;
+
+ //std::unordered_map<std::vector<std::vector<int>>, TranspositionTableEntry, BoardMoveHash> m_transpositionTable;
 
   //std::vector<unsigned int> m_bestMoves;
   //std::vector<unsigned int> m_bestUsableMoves;
