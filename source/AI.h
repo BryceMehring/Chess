@@ -34,12 +34,13 @@ public:
 
 private:
 
-  // Minimax algorithm:
+  // Minimax algorithm with alpha beta pruning
   // Returns the best possible move at the current depth limit
   bool MiniMax(BoardMove& moveOut);
   bool MiniMax(int depth, int playerID, BoardMove& moveOut);
-  float MiniMax(int depth, int playerID, float a, float b, int color);
+  int MiniMax(int depth, int playerID, int a, int b, int color);
 
+  // Returns the amount of time that the AI has per turn
   std::uint64_t GetTimePerMove() const;
 
   // Draws the chess board to standard output
@@ -50,6 +51,7 @@ private:
   unsigned int m_count;
   unsigned int m_depth;
   unsigned int m_bestIndex;
+  bool m_bInCheckmate;
 
   std::unordered_map<std::vector<std::vector<int>>, TranspositionTableEntry, BoardMoveHash> m_transpositionTable;
 

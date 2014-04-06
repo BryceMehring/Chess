@@ -4,14 +4,15 @@
 
 #include <algorithm>
 #include <cassert>
-#include <cfloat>
+#include <limits>
 #include <functional>
 
 using std::cout;
 using std::endl;
 using namespace std::placeholders;
 
-AI::AI(Connection* conn, unsigned int depth) : BaseAI(conn), m_totalTime(0), m_count(1), m_depth(depth), m_bestIndex(0)/*, m_bestMoves(depth), m_bestUsableMoves(depth)*/ {}
+AI::AI(Connection* conn, unsigned int depth) : BaseAI(conn), m_totalTime(0), m_count(1),
+	m_depth(depth), m_bestIndex(0), m_bInCheckmate(false) {}
 
 const char* AI::username()
 {
@@ -26,6 +27,7 @@ const char* AI::password()
 //This function is run once, before your first turn.
 void AI::init()
 {
+	srand(time(0));
 }
 
 //This function is called each time it is your turn.
@@ -73,18 +75,14 @@ bool AI::MiniMax(BoardMove& moveOut)
 {
 	bool bFoundMove = false;
 	unsigned int d = 1;
-	unsigned int depthLimit = m_depth;
-
-	/*m_bestMoves.swap(m_bestUsableMoves);
-	m_bestMoves.clear();
-	m_bestMoves.resize(m_depth);*/
 
 	m_minimaxTimer.Reset();
 	m_minimaxTimer.Start();
 
 	m_bestIndex = 0;
+	m_bInCheckmate = false;
 
-	while(d <= depthLimit && ((m_minimaxTimer.GetTime()) < (GetTimePerMove() * 1000000000)))
+	while(d <= m_depth && ((m_minimaxTimer.GetTime()) < GetTimePerMove()) && (!m_bInCheckmate))
 	{
 		bool bFoundAtDepth = MiniMax(d, playerID(), moveOut);
 		if(bFoundAtDepth)
@@ -107,15 +105,15 @@ bool AI::MiniMax(int depth, int playerID, BoardMove& moveOut)
 	{
 		unsigned int index = 0;
 
-		float a = -FLT_MAX;
-		float b = FLT_MAX;
+		float a = std::numeric_limits<int>::min();
+		float b = std::numeric_limits<int>::max();
 
 		std::swap(userMoves[0], userMoves[m_bestIndex]);
 		for(unsigned int i = 0; i < userMoves.size(); ++i)
 		{
 			ApplyMove theMove(&userMoves[i], &m_board);
 
-			float val = -MiniMax(depth - 1, playerID, -b, -a, -1);
+			float val = MiniMax(depth - 1, playerID, a, b, -1);
 
 			// If the new move is better than the last
 			if(val > a)
@@ -123,10 +121,11 @@ bool AI::MiniMax(int depth, int playerID, BoardMove& moveOut)
 				index = i;
 				a = val;
 				bFoundMove = true;
+				cout << val << endl;
 			}
 
 			// If we have ran out of time
-			if(bFoundMove && ((m_minimaxTimer.GetTime()) >= (GetTimePerMove() * 1000000000)))
+			if(bFoundMove && ((m_minimaxTimer.GetTime()) >= GetTimePerMove()))
 			{
 				bFoundMove = false;
 				break;
@@ -144,99 +143,60 @@ bool AI::MiniMax(int depth, int playerID, BoardMove& moveOut)
 
 }
 
-float AI::MiniMax(int depth, int playerID, float a, float b, int color)
+int AI::MiniMax(int depth, int playerID, int a, int b, int color)
 {
-	float alphaOrig = a;
-
-	/*auto ttIter = m_transpositionTable.find(m_board.GetState());
-	if(ttIter != m_transpositionTable.end())
-	{
-		const TranspositionTableEntry& ttEntry = ttIter->second;
-		if(ttEntry.depth >= (unsigned int)depth)
-		{
-			if(ttEntry.flag == TranspositionTableFlag::EXACT)
-				return ttEntry.value;
-			else if(ttEntry.flag == TranspositionTableFlag::LOWERBOUND)
-				a = std::max(a, ttEntry.value);
-			else if(ttEntry.flag == TranspositionTableFlag::UPPERBOUND)
-				b = std::min(b, ttEntry.value);
-
-			if(a >= b)
-				return ttEntry.value;
-		}
-	}*/
-
 	if(m_board.IsInCheckmate(!playerID))
-		return color*10000.0f;
+	{
+		m_bInCheckmate = true;
+		return 10000;
+	}
 
 	if(m_board.IsInStalemate(!playerID))
-		return -color*500.0f;
+		return -500;
 
 	if(depth <= 0)
-		return color*m_board.GetWorth(playerID, ChessHeuristic());
+		return m_board.GetWorth(playerID, ChessHeuristic());
 
-	//const std::vector<BoardMove> enemyMoves = m_board.GetMoves(color == 1 ? !playerID : playerID);
 	std::vector<BoardMove> userMoves =  m_board.GetMoves(color == 1 ? playerID : !playerID);
-	std::partition(userMoves.begin(), userMoves.end(),[&](const BoardMove& a) -> bool
+	auto firstIter = std::partition(userMoves.begin(), userMoves.end(),[&](const BoardMove& a) -> bool
 	{
-		if(a.capturedType != 0)
-			return true;
-
-		return false;
-
-		/*bool bUnderAttack = false;
-		for(const BoardMove& m : enemyMoves)
-		{
-			if(m.to == a.from)
-			{
-				bUnderAttack = true;
-				break;
-			}
-		}
-
-		return bUnderAttack;*/
+		return (a.capturedType != 0);
 	});
 
-	//std::swap(m_bestUsableMoves[depth - 1], m_bestUsableMoves[0]);
-
-	float bestValue = -FLT_MAX;
+	std::random_shuffle(firstIter, userMoves.end());
 
 	for(unsigned int i = 0; i < userMoves.size(); ++i)
 	{
 		ApplyMove theMove(&userMoves[i], &m_board);
+		int score = MiniMax(depth - 1, playerID, a, b, -color);
 
-		float score = -MiniMax(depth - 1, playerID, -b, -a, -color);
-		bestValue = std::max(bestValue, score);
-		a = std::max(a, score);
+		if(color == 1)
+		{
+			if(score >= b)
+				return b;
 
-		if(a >= b)
-			break;
+			if(score > a)
+				a = score;
+		}
+		else
+		{
+			if(score <= a)
+				return a;
+
+			if(score < b)
+				b = score;
+		}
 	}
 
-	/*TranspositionTableEntry tableEntry;
-	tableEntry.depth = depth;
-	tableEntry.value = bestValue;
-	if(bestValue <= alphaOrig)
-	{
-		tableEntry.flag = TranspositionTableFlag::UPPERBOUND;
-	}
-	else if(bestValue >= b)
-	{
-		tableEntry.flag = TranspositionTableFlag::LOWERBOUND;
-	}
-	else
-	{
-		tableEntry.flag = TranspositionTableFlag::EXACT;
-	}
+	if(color == 1)
+		return a;
 
-	m_transpositionTable[m_board.GetState()] = tableEntry;*/
-
-	return bestValue;
+	return b;
 }
 
 std::uint64_t AI::GetTimePerMove() const
 {
-	std::uint64_t time = (std::uint64_t)players[playerID()].time() / 60;
+	std::uint64_t time = (std::uint64_t)players[playerID()].time() / 50 * 1000000000;
 
 	// If the game is almost going to time out,
 	// do not search as deep
@@ -245,7 +205,6 @@ std::uint64_t AI::GetTimePerMove() const
 		time = 3;
 	}
 
-	cout << "Time per move: " << time << endl;
 	return time;
 }
 

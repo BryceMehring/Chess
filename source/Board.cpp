@@ -224,13 +224,6 @@ int Board::GetWorth(int playerID, const std::function<int(const Board& board, co
 		}
 	}
 
-	/*float stalemateScalar = 2.0f;
-
-	if(m_turnsToStalemate < 60)
-	{
-		stalemateScalar = 0.01f;
-	}*/
-
 	return (iTotal[playerID]) - iTotal[!playerID];
 }
 
