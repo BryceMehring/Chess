@@ -82,7 +82,7 @@ bool AI::MiniMax(BoardMove& moveOut)
 	m_bInCheckmate = false;
 	m_bestIndex = 0;
 
-	while((d <= m_depth) && ((m_minimaxTimer.GetTime()) < GetTimePerMove()) && (!m_bInCheckmate))
+	while((d <= m_depth) && ((m_minimaxTimer.GetTime()) < GetTimePerMove()) && (!m_bInCheckmate || (d != 2)))
 	{
 		bool bFoundAtDepth = MiniMax(d, playerID(), moveOut);
 		if(bFoundAtDepth)
@@ -92,6 +92,7 @@ bool AI::MiniMax(BoardMove& moveOut)
 #endif
 			bFoundMove = true;
 		}
+
 		++d;
 	}
 
