@@ -164,7 +164,7 @@ int AI::MiniMax(int depth, int playerID, int a, int b, int color)
 	if(m_board.IsInCheckmate(!playerID))
 	{
 		m_bInCheckmate = true;
-		return 10000;
+		return 1000000;
 	}
 
 	if(m_board.IsInStalemate(!playerID))
