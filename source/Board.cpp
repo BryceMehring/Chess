@@ -169,8 +169,6 @@ void Board::Update(int turnsToStalemate, const std::vector<Move>& moves, const s
 
 		m_board[p.file() - 1][p.rank() - 1] = index;
 		m_pieces.insert({index, {p, p.owner(), p.file(), p.rank(), p.hasMoved(), p.type()}});
-
-		//cout << index << endl;
 	}
 
 	if(!moves.empty())
@@ -197,7 +195,6 @@ std::vector<BoardMove> Board::GetMoves(int playerID)
 	auto iter = m_validMoveCache[playerID].find(m_board);
 	if(iter != m_validMoveCache[playerID].end())
 	{
-		//cout << "Cache Hit" << endl;
 		return iter->second;
 	}
 
@@ -714,6 +711,7 @@ bool Board::IsThreeBoardStateStalemate() const
 
 void Board::Clear()
 {
+	// Clear the board of pieces
 	for(auto& fileIter : m_board)
 	{
 		for(int& rankIter : fileIter)
@@ -722,5 +720,12 @@ void Board::Clear()
 		}
 	}
 
+	// Clear the cache
+	for(auto& iter : m_validMoveCache)
+	{
+		iter.clear();
+	}
+
+	// Clear the list of pieces
 	m_pieces.clear();
 }

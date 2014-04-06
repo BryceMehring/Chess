@@ -80,6 +80,7 @@ bool AI::MiniMax(BoardMove& moveOut)
 	m_minimaxTimer.Start();
 
 	m_bInCheckmate = false;
+	m_bestIndex = 0;
 
 	while((d <= m_depth) && ((m_minimaxTimer.GetTime()) < GetTimePerMove()) && (!m_bInCheckmate))
 	{
@@ -123,6 +124,10 @@ bool AI::MiniMax(int depth, int playerID, BoardMove& moveOut)
 		int a = std::numeric_limits<int>::min();
 		int b = std::numeric_limits<int>::max();
 
+		// Move the previous best move to the front of the list of moves
+		assert(m_bestIndex < m_rootMoves.size());
+		std::swap(m_rootMoves[0],m_rootMoves[m_bestIndex]);
+
 		for(unsigned int i = 0; i < m_rootMoves.size(); ++i)
 		{
 			ApplyMove theMove(&m_rootMoves[i], &m_board);
@@ -152,6 +157,7 @@ bool AI::MiniMax(int depth, int playerID, BoardMove& moveOut)
 		if(bFoundMove)
 		{
 			moveOut = m_rootMoves[index];
+			m_bestIndex = index;
 		}
 	}
 

@@ -50,6 +50,7 @@ private:
   std::uint64_t m_totalTime;
   unsigned int m_count;
   unsigned int m_depth;
+  unsigned int m_bestIndex;
   bool m_bInCheckmate;
 
   std::vector<BoardMove> m_rootMoves;
