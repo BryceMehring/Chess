@@ -217,7 +217,7 @@ int AI::MiniMax(int depth, int playerID, int a, int b, int color)
 	return b;
 }
 
-std::uint64_t AI::GetTimePerMove() const
+std::uint64_t AI::GetTimePerMove()
 {
 	std::uint64_t time = (std::uint64_t)players[playerID()].time() / 50 * 1000000000;
 
@@ -225,7 +225,8 @@ std::uint64_t AI::GetTimePerMove() const
 	// do not search as deep
 	if(time < 1)
 	{
-		time = 3;
+		m_depth = 4;
+		time = std::numeric_limits<std::uint64_t>::max();
 	}
 
 	return time;

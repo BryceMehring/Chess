@@ -41,7 +41,7 @@ private:
   int MiniMax(int depth, int playerID, int a, int b, int color);
 
   // Returns the amount of time that the AI has per turn
-  std::uint64_t GetTimePerMove() const;
+  std::uint64_t GetTimePerMove();
 
   // Draws the chess board to standard output
   void DrawBoard() const;
