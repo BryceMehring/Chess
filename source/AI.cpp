@@ -44,15 +44,15 @@ bool AI::run()
 #endif
 
 	m_board.Update(TurnsToStalemate(), moves, pieces);
-	BoardMove bestMove;
-	if(MiniMax(bestMove))
-	{
-		BoardPiece* pPiece = m_board.GetPiece(bestMove.from);
-		assert(pPiece != nullptr);
-		pPiece->piece.move(bestMove.to.x, bestMove.to.y, bestMove.promotion);
 
-		// Spawn a new thread to think while the enemy is moving
-	}
+	// Find the best move using Minimax
+	BoardMove bestMove;
+	MiniMax(bestMove);
+
+	// Get the piece to move and move the piece
+	BoardPiece* pPiece = m_board.GetPiece(bestMove.from);
+	assert(pPiece != nullptr);
+	pPiece->piece.move(bestMove.to.x, bestMove.to.y, bestMove.promotion);
 
 #ifdef DEBUG_OUTPUT
 	m_totalTime += timer.GetTime();
@@ -71,10 +71,10 @@ void AI::end()
 {
 }
 
-bool AI::MiniMax(BoardMove& moveOut)
+void AI::MiniMax(BoardMove& moveOut)
 {
-	bool bFoundMove = false;
 	unsigned int d = 1;
+	bool bEnableTimer = false;
 
 	m_minimaxTimer.Reset();
 	m_minimaxTimer.Start();
@@ -82,38 +82,41 @@ bool AI::MiniMax(BoardMove& moveOut)
 	m_bInCheckmate = false;
 	m_bestIndex = 0;
 
-	while(((m_minimaxTimer.GetTime()) < GetTimePerMove()) && (d <= m_depth) && (!m_bInCheckmate || (d != 2)))
+	while((!bEnableTimer || (m_minimaxTimer.GetTime() < GetTimePerMove())) && (d <= m_depth) && (!m_bInCheckmate || (d != 2)))
 	{
-		bool bFoundAtDepth = MiniMax(d, playerID(), moveOut);
+		bool bFoundAtDepth = MiniMax(d, playerID(), bEnableTimer, moveOut);
 		if(bFoundAtDepth)
 		{
 #ifdef DEBUG_OUTPUT
 			cout << "Depth " << d << " time: " << m_minimaxTimer.GetTime() << endl;
 #endif
-			bFoundMove = true;
+			bEnableTimer = true;
+		}
+		else
+		{
+#ifdef DEBUG_OUTPUT
+			cout << "No move was found at depth " << d << endl;
+#endif
 		}
 
 		++d;
 	}
 
 #ifdef DEBUG_OUTPUT
-	if(bFoundMove)
+
+	cout << "Valid Moves: " << endl;
+	for(auto iter : m_rootMoves)
 	{
-		cout << "Valid Moves: " << endl;
-		for(auto iter : m_rootMoves)
+		if(iter.from == moveOut.from)
 		{
-			if(iter.from == moveOut.from)
-			{
-				cout << iter << endl;
-			}
+			cout << iter << endl;
 		}
 	}
 #endif
 
-	return bFoundMove;
 }
 
-bool AI::MiniMax(int depth, int playerID, BoardMove& moveOut)
+bool AI::MiniMax(int depth, int playerID, bool bEnableTimer, BoardMove& moveOut)
 {
 	bool bFoundMove = false;
 
@@ -147,11 +150,14 @@ bool AI::MiniMax(int depth, int playerID, BoardMove& moveOut)
 #endif
 			}
 
-			// If we have ran out of time
-			if(bFoundMove && ((m_minimaxTimer.GetTime()) >= GetTimePerMove()))
+			if(bEnableTimer)
 			{
-				bFoundMove = false;
-				break;
+				// If we have ran out of time
+				if((m_minimaxTimer.GetTime()) >= GetTimePerMove())
+				{
+					bFoundMove = false;
+					break;
+				}
 			}
 		}
 

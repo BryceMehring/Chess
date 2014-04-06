@@ -36,8 +36,8 @@ private:
 
   // Minimax algorithm with alpha beta pruning
   // Returns the best possible move at the current depth limit
-  bool MiniMax(BoardMove& moveOut);
-  bool MiniMax(int depth, int playerID, BoardMove& moveOut);
+  void MiniMax(BoardMove& moveOut);
+  bool MiniMax(int depth, int playerID, bool bEnableTime, BoardMove& moveOut);
   int MiniMax(int depth, int playerID, int a, int b, int color);
 
   // Returns the amount of time that the AI has per turn
