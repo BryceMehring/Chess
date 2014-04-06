@@ -13,6 +13,18 @@ const int ChessHeuristic::m_pawnMoveTable[8][8] =
 	{0,  0,  0,  0,  0,  0,  0,  0}
 };
 
+const int ChessHeuristic::m_pawnEndGameMoveTable[8][8] =
+{
+	{0,  0,  0,  0,  0,  0,  0,  0},
+	{50, 50, 50, 50, 50, 50, 50, 50},
+	{40, 40, 40, 40, 40, 40, 40, 40},
+	{20, 20, 20, 20, 20, 20, 20, 20},
+	{-20,-20,-20,-20,-20,-20,-20,-20},
+	{-40,-40,-40,-40,-40,-40,-40,-40},
+	{-50,-50,-50,-50,-50,-50,-50,-50},
+	{  0,  0,  0,  0,  0,  0,  0,  0}
+};
+
 const int ChessHeuristic::m_knightMoveTable[8][8] =
 {
 	{-50,-40,-30,-30,-30,-30,-40,-50},
@@ -121,7 +133,14 @@ int ChessHeuristic::GetMaterialValue(const Board& board, const BoardPiece& piece
 	{
 		case 'P':
 			value += 100;
-			value += m_pawnMoveTable[rank][piece.file - 1];
+			if(board.GetNumPieces() > 16)
+			{
+				value += m_pawnMoveTable[rank][piece.file - 1];
+			}
+			else
+			{
+				value += m_pawnEndGameMoveTable[rank][piece.file - 1];
+			}
 			break;
 		case 'N':
 			value += 320;

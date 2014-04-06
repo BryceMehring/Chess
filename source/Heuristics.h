@@ -17,6 +17,7 @@ private:
 	int GetMaterialValue(const Board&, const BoardPiece&) const;
 
 	static const int m_pawnMoveTable[8][8];
+	static const int m_pawnEndGameMoveTable[8][8];
 	static const int m_knightMoveTable[8][8];
 	static const int m_bishopMoveTable[8][8];
 	static const int m_rookMoveTable[8][8];
