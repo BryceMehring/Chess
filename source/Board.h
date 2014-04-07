@@ -10,7 +10,6 @@
 #include <functional>
 
 #include <vector>
-#include <boost/functional/hash.hpp>
 
 struct BoardPiece
 {
@@ -63,16 +62,13 @@ public:
 	std::size_t operator()(const std::vector<std::vector<int>>& key) const
 	{
 		std::size_t h = 5381;
-		boost::hash_range(h, key.begin(), key.end());
-		/*std::size_t h = 5381;
 		for(const auto& iter : key)
 		{
 			for(int i : iter)
 			{
-				h *= 33;
-				h += char(i + '0');
+				h ^= i + 0x9e3779b9 + (h<<6) + (h>>2);
 			}
-		}*/
+		}
 
 		return h;
 	}
