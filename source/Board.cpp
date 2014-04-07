@@ -208,9 +208,9 @@ int Board::GetWorth(int playerID, const std::function<int(const Board& board, co
 	std::vector<BoardMove> moves = GetMoves(playerID, false);
 
 	int iTotal[2] = {0,0};
-	for(auto iter : m_board)
+	for(auto& iter : m_board)
 	{
-		for(auto subIter : iter)
+		for(auto& subIter : iter)
 		{
 			auto iter = m_pieces.find(subIter);
 			if(iter != m_pieces.end())
@@ -221,7 +221,7 @@ int Board::GetWorth(int playerID, const std::function<int(const Board& board, co
 		}
 	}
 
-	return (iTotal[playerID]) - iTotal[!playerID];
+	return (iTotal[playerID] - iTotal[!playerID]);
 }
 
 BoardPiece* Board::GetPiece(const ivec2 &pos)
@@ -285,9 +285,9 @@ std::vector<BoardMove> Board::GetMoves(int playerID, bool bCheck)
 {
 	std::vector<BoardMove> moves;
 	moves.reserve(35);
-	for(auto iter : m_board)
+	for(auto& iter : m_board)
 	{
-		for(auto subIter : iter)
+		for(auto& subIter : iter)
 		{
 			auto iter = m_pieces.find(subIter);
 			if(iter != m_pieces.end())
@@ -626,9 +626,9 @@ bool Board::IsNotEnoughPiecesStalemate() const
 	int counters[2][2] = {{0}}; // bishop, knight
 	ivec2 bishopPos[2];
 
-	for(auto iter : m_board)
+	for(auto& iter : m_board)
 	{
-		for(auto subIter : iter)
+		for(auto& subIter : iter)
 		{
 			auto iter = m_pieces.find(subIter);
 			if(iter != m_pieces.end())
