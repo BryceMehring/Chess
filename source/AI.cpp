@@ -181,10 +181,10 @@ int AI::MiniMax(int depth, int playerID, int a, int b, int color)
 	}
 
 	if(m_board.IsInStalemate(!playerID))
-		return -500;
+		return -1000000;
 
 	if(depth <= 0)
-		return m_board.GetWorth(playerID, ChessHeuristic());
+		return m_board.GetWorth(playerID, ChessHeuristic()); //
 
 	std::vector<BoardMove> userMoves =  m_board.GetMoves(color == 1 ? playerID : !playerID);
 	auto firstIter = std::partition(userMoves.begin(), userMoves.end(),[&](const BoardMove& a) -> bool
