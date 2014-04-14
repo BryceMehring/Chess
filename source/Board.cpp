@@ -7,34 +7,33 @@
 using std::cout;
 using std::endl;
 
-ApplyMove::ApplyMove(const BoardMove* pMove, Board* pBoard) : m_pMove(pMove), m_pBoard(pBoard)
+ApplyMove::ApplyMove(const BoardMove& move, Board* pBoard) : m_move(move), m_pBoard(pBoard)
 {
 	// todo: clean up this code
-	assert(pMove != nullptr);
 	assert(pBoard != nullptr);
 
-	BoardPiece* pFrom = m_pBoard->GetPiece(m_pMove->from);
+	BoardPiece* pFrom = m_pBoard->GetPiece(m_move.from);
 	assert(pFrom != nullptr);
 
-	m_pBoard->m_moveHistory.push_front(*m_pMove);
+	m_pBoard->m_moveHistory.push_front(m_move);
 
-	m_oldIndex = m_pBoard->m_board[m_pMove->from.x - 1][m_pMove->from.y - 1];
-	m_newIndex = m_pBoard->m_board[m_pMove->to.x - 1][m_pMove->to.y - 1];
+	m_oldIndex = m_pBoard->m_board[m_move.from.x - 1][m_move.from.y - 1];
+	m_newIndex = m_pBoard->m_board[m_move.to.x - 1][m_move.to.y - 1];
 
-	m_pBoard->m_board[m_pMove->from.x - 1][m_pMove->from.y - 1] = 0;
-	m_pBoard->m_board[m_pMove->to.x - 1][m_pMove->to.y - 1] = m_oldIndex;
+	m_pBoard->m_board[m_move.from.x - 1][m_move.from.y - 1] = 0;
+	m_pBoard->m_board[m_move.to.x - 1][m_move.to.y - 1] = m_oldIndex;
 
 	m_LastMove = m_pBoard->m_LastMove;
-	m_pBoard->m_LastMove = *m_pMove;
+	m_pBoard->m_LastMove = m_move;
 
-	pFrom->file = m_pMove->to.x;
-	pFrom->rank = m_pMove->to.y;
+	pFrom->file = m_move.to.x;
+	pFrom->rank = m_move.to.y;
 
 	m_hasMoved = pFrom->hasMoved;
 	pFrom->hasMoved = 1;
 
 	// Turns left for stalemate logic
-	if(m_pMove->capturedType == 0 && pFrom->type != 'P')
+	if(m_move.capturedType == 0 && pFrom->type != 'P')
 	{
 		m_pBoard->m_turnsToStalemate--;
 	}
@@ -48,14 +47,14 @@ ApplyMove::ApplyMove(const BoardMove* pMove, Board* pBoard) : m_pMove(pMove), m_
 	if(pFrom->type == 'K')
 	{
 		m_oldKingPos = m_pBoard->m_kingPos[pFrom->owner];
-		m_pBoard->m_kingPos[pFrom->owner] = m_pMove->to;
+		m_pBoard->m_kingPos[pFrom->owner] = m_move.to;
 	}
 	// Promotion logic
-	else if(m_pMove->specialMove == SpecialMove::Promotion)
+	else if(m_move.specialMove == SpecialMove::Promotion)
 	{
-		pFrom->type = m_pMove->promotion;
+		pFrom->type = m_move.promotion;
 	}
-	else if(m_pMove->specialMove == SpecialMove::Castle)
+	else if(m_move.specialMove == SpecialMove::Castle)
 	{
 		ApplyCastleMove(true);
 	}
@@ -64,7 +63,7 @@ ApplyMove::ApplyMove(const BoardMove* pMove, Board* pBoard) : m_pMove(pMove), m_
 ApplyMove::~ApplyMove()
 {
 	// todo: clean up this code
-	BoardPiece* pFrom = m_pBoard->GetPiece(m_pMove->to);
+	BoardPiece* pFrom = m_pBoard->GetPiece(m_move.to);
 	assert(pFrom != nullptr);
 
 	m_pBoard->m_moveHistory.pop_front();
@@ -75,17 +74,17 @@ ApplyMove::~ApplyMove()
 		m_pBoard->m_kingPos[pFrom->owner] = m_oldKingPos;
 	}
 	// Promotion logic
-	else if(m_pMove->specialMove == SpecialMove::Promotion)
+	else if(m_move.specialMove == SpecialMove::Promotion)
 	{
 		pFrom->type = pFrom->piece.type();
 	}
-	else if(m_pMove->specialMove == SpecialMove::Castle)
+	else if(m_move.specialMove == SpecialMove::Castle)
 	{
 		ApplyCastleMove(false);
 	}
 
 	// Turns left for stalemate logic
-	if(m_pMove->capturedType == 0 && pFrom->type != 'P')
+	if(m_move.capturedType == 0 && pFrom->type != 'P')
 	{
 		m_pBoard->m_turnsToStalemate++;
 	}
@@ -94,13 +93,13 @@ ApplyMove::~ApplyMove()
 		m_pBoard->m_turnsToStalemate = m_oldTurnsToStalemate;
 	}
 
-	m_pBoard->m_board[m_pMove->from.x - 1][m_pMove->from.y - 1] = m_oldIndex;
-	m_pBoard->m_board[m_pMove->to.x - 1][m_pMove->to.y - 1] = m_newIndex;
+	m_pBoard->m_board[m_move.from.x - 1][m_move.from.y - 1] = m_oldIndex;
+	m_pBoard->m_board[m_move.to.x - 1][m_move.to.y - 1] = m_newIndex;
 
 	m_pBoard->m_LastMove = m_LastMove;
 
-	pFrom->file = m_pMove->from.x;
-	pFrom->rank = m_pMove->from.y;
+	pFrom->file = m_move.from.x;
+	pFrom->rank = m_move.from.y;
 	pFrom->hasMoved = m_hasMoved;
 }
 
@@ -109,7 +108,7 @@ void ApplyMove::ApplyCastleMove(bool bApply)
 	int rookFile = 1;
 	int rookToFile = 4;
 
-	if((m_pMove->to.x - m_pMove->from.x) > 0)
+	if((m_move.to.x - m_move.from.x) > 0)
 	{
 		// Rook will move to the left
 		rookFile = 8;
@@ -121,23 +120,13 @@ void ApplyMove::ApplyCastleMove(bool bApply)
 		std::swap(rookFile, rookToFile);
 	}
 
-	BoardPiece* pRook = m_pBoard->GetPiece({rookFile,m_pMove->from.y});
+	BoardPiece* pRook = m_pBoard->GetPiece({rookFile,m_move.from.y});
 	assert(pRook != nullptr);
 
 	pRook->file = rookToFile;
 	pRook->hasMoved = bApply;
 
-	std::swap(m_pBoard->m_board[rookFile - 1][m_pMove->from.y - 1], m_pBoard->m_board[rookToFile - 1][m_pMove->from.y - 1]);
-}
-
-bool operator ==(const BoardTile& a, const BoardTile& b)
-{
-	return a.type == b.type;
-}
-
-bool operator !=(const BoardTile& a, const BoardTile& b)
-{
-	return !::operator==(a, b);
+	std::swap(m_pBoard->m_board[rookFile - 1][m_move.from.y - 1], m_pBoard->m_board[rookToFile - 1][m_move.from.y - 1]);
 }
 
 Board::Board() : m_turnsToStalemate(0)
@@ -190,7 +179,7 @@ void Board::Update(int turnsToStalemate, const std::vector<Move>& moves, const s
 	m_turnsToStalemate = turnsToStalemate;
 }
 
-std::vector<BoardMove> Board::GetMoves(int playerID)
+const std::vector<BoardMove>& Board::GetMoves(int playerID)
 {
 	auto iter = m_validMoveCache[playerID].find(m_board);
 	if(iter != m_validMoveCache[playerID].end())
@@ -198,9 +187,8 @@ std::vector<BoardMove> Board::GetMoves(int playerID)
 		return iter->second;
 	}
 
-	std::vector<BoardMove> moves = GetMoves(playerID, true);
-	m_validMoveCache[playerID].insert({m_board, moves});
-	return std::move(moves);
+	auto iterPair = m_validMoveCache[playerID].insert(std::make_pair(m_board, GetMoves(playerID, true)));
+	return iterPair.first->second;
 }
 
 int Board::GetWorth(int playerID, const std::function<int(const Board& board, const std::vector<BoardMove>&, const BoardPiece&)>& heuristic)
@@ -573,7 +561,7 @@ void Board::AddMove(const BoardMove& move, bool bCheck, std::vector<BoardMove>& 
 		BoardPiece* pFrom = GetPiece(move.from);
 		assert(pFrom != nullptr);
 
-		ApplyMove triedMove(&move, this);
+		ApplyMove triedMove(move, this);
 
 		if(!IsInCheck(pFrom->owner))
 		{
@@ -602,16 +590,7 @@ bool Board::IsInCheck(int playerID)
 
 bool Board::IsNoLegalMovesStalemate(int playerID)
 {
-	bool bNoLegalMoves = GetMoves(playerID).empty() && !IsInCheck(playerID);
-
-	/*if(bNoLegalMoves)
-	{
-#ifdef DEBUG_OUTPUT
-		cout << "No legal moves detected" << endl;
-#endif
-	}*/
-
-	return bNoLegalMoves;
+	return GetMoves(playerID).empty() && !IsInCheck(playerID);
 }
 
 bool Board::IsNotEnoughPiecesStalemate() const

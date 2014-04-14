@@ -26,7 +26,7 @@ class ApplyMove
 {
 public:
 
-	ApplyMove(const BoardMove* pMove, class Board* pBoard);
+	ApplyMove(const BoardMove& move, class Board* pBoard);
 	~ApplyMove();
 
 private:
@@ -35,7 +35,7 @@ private:
 
 private:
 
-	const BoardMove* m_pMove;
+	BoardMove m_move;
 	Board* m_pBoard;
 
 	int m_oldIndex;
@@ -45,15 +45,6 @@ private:
 	BoardMove m_LastMove;
 	ivec2 m_oldKingPos;
 };
-
-struct BoardTile
-{
-	int id;
-	int type;
-};
-
-bool operator ==(const BoardTile& a, const BoardTile& b);
-bool operator !=(const BoardTile& a, const BoardTile& b);
 
 class BoardMoveHash
 {
@@ -88,7 +79,7 @@ public:
 	void Update(int turnsToStalemate, const std::vector<Move>& moves, const std::vector<Piece>& pieces);
 
 	// Returns all valid moves for the specifed player
-	std::vector<BoardMove> GetMoves(int playerID);
+	const std::vector<BoardMove>& GetMoves(int playerID);
 
 	// Returns the value of the game state for the player
 	int GetWorth(int playerID, const std::function<int(const Board&, const std::vector<BoardMove>&, const BoardPiece&)>& heuristic);

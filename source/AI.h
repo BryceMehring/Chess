@@ -38,7 +38,7 @@ private:
   // Returns the best possible move at the current depth limit
   void MiniMax(BoardMove& moveOut);
   bool MiniMax(int depth, int playerID, bool bEnableTime, BoardMove& moveOut);
-  int MiniMax(int depth, int playerID, int a, int b, int color);
+  int MiniMax(int depth, int playerID, int playerIDToMove, int a, int b);
 
   // Returns the amount of time that the AI has per turn
   std::uint64_t GetTimePerMove();
@@ -55,10 +55,7 @@ private:
 
   std::vector<BoardMove> m_rootMoves;
 
- //std::unordered_map<std::vector<std::vector<int>>, TranspositionTableEntry, BoardMoveHash> m_transpositionTable;
-
-  //std::vector<unsigned int> m_bestMoves;
-  //std::vector<unsigned int> m_bestUsableMoves;
+  int m_history[2][64][64];
 
   Timer m_minimaxTimer;
 };

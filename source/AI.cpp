@@ -6,6 +6,7 @@
 #include <cassert>
 #include <limits>
 #include <functional>
+#include <cstring>
 
 using std::cout;
 using std::endl;
@@ -82,6 +83,8 @@ void AI::MiniMax(BoardMove& moveOut)
 	m_bInCheckmate = false;
 	m_bestIndex = 0;
 
+	std::memset(m_history,0,sizeof(m_history));
+
 	while((!bEnableTimer || (m_minimaxTimer.GetTime() < GetTimePerMove())) && (d <= m_depth) && (!m_bInCheckmate || (d != 2)))
 	{
 		bool bFoundAtDepth = MiniMax(d, playerID(), bEnableTimer, moveOut);
@@ -134,9 +137,9 @@ bool AI::MiniMax(int depth, int playerID, bool bEnableTimer, BoardMove& moveOut)
 
 		for(unsigned int i = 0; i < m_rootMoves.size(); ++i)
 		{
-			ApplyMove theMove(&m_rootMoves[i], &m_board);
+			ApplyMove theMove(m_rootMoves[i], &m_board);
 
-			int val = MiniMax(depth - 1, playerID, a, b, -1);
+			int val = MiniMax(depth - 1, playerID, !playerID, a, b);
 
 			// If the new move is better than the last
 			if(val > a)
@@ -172,7 +175,7 @@ bool AI::MiniMax(int depth, int playerID, bool bEnableTimer, BoardMove& moveOut)
 
 }
 
-int AI::MiniMax(int depth, int playerID, int a, int b, int color)
+int AI::MiniMax(int depth, int playerID, int playerIDToMove, int a, int b)
 {
 	if(m_board.IsInCheckmate(!playerID))
 	{
@@ -184,40 +187,64 @@ int AI::MiniMax(int depth, int playerID, int a, int b, int color)
 		return -1000000;
 
 	if(depth <= 0)
-		return m_board.GetWorth(playerID, ChessHeuristic()); //
+		return m_board.GetWorth(playerID, ChessHeuristic());
 
-	std::vector<BoardMove> userMoves =  m_board.GetMoves(color == 1 ? playerID : !playerID);
-	auto firstIter = std::partition(userMoves.begin(), userMoves.end(),[&](const BoardMove& a) -> bool
+	std::vector<BoardMove> userMoves =  m_board.GetMoves(playerIDToMove);
+	auto firstIter = std::partition(userMoves.begin(), userMoves.end(), [&](const BoardMove& a) -> bool
 	{
-		return (a.capturedType != 0);
+		return (m_history[playerIDToMove][8*(a.from.x - 1) + (a.from.y - 1)][8*(a.to.x - 1) + (a.to.y - 1)] > 0);
 	});
 
 	std::random_shuffle(firstIter, userMoves.end());
 
+	BoardMove bestMove;
+	bool bFoundBestMove = false;
+
 	for(unsigned int i = 0; i < userMoves.size(); ++i)
 	{
-		ApplyMove theMove(&userMoves[i], &m_board);
-		int score = MiniMax(depth - 1, playerID, a, b, -color);
+		const BoardMove& top = userMoves[i];
 
-		if(color == 1)
+		ApplyMove theMove(top, &m_board);
+		int score = MiniMax(depth - 1, playerID, !playerIDToMove, a, b);
+
+		if(playerIDToMove == 0)
 		{
 			if(score >= b)
-				return b;
+			{
+				m_history[playerIDToMove][8*(top.from.x - 1) + (top.from.y - 1)][8*(top.to.x - 1) + (top.to.y - 1)] += 1;
+				return score;
+			}
 
 			if(score > a)
+			{
+				bFoundBestMove = true;
 				a = score;
+				bestMove = top;
+			}
 		}
 		else
 		{
 			if(score <= a)
-				return a;
+			{
+				m_history[playerIDToMove][8*(top.from.x - 1) + (top.from.y - 1)][8*(top.to.x - 1) + (top.to.y - 1)] += 1;
+				return score;
+			}
 
 			if(score < b)
+			{
+				bFoundBestMove = true;
 				b = score;
+				bestMove = top;
+			}
 		}
 	}
 
-	if(color == 1)
+	if(bFoundBestMove)
+	{
+		m_history[playerIDToMove][8*(bestMove.from.x - 1) + (bestMove.from.y - 1)][8*(bestMove.to.x - 1) + (bestMove.to.y - 1)] += 1;
+	}
+
+	if(playerIDToMove == 0)
 		return a;
 
 	return b;
