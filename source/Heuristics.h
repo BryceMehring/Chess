@@ -14,7 +14,7 @@ public:
 
 private:
 
-	int GetMaterialValue(const Board&, const BoardPiece&) const;
+	int GetMaterialValue(const Board&, const ivec2& pos, int type, int owner) const;
 
 	static const int m_pawnMoveTable[8][8];
 	static const int m_pawnEndGameMoveTable[8][8];

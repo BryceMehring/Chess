@@ -99,23 +99,13 @@ const int ChessHeuristic::m_kingEndGameMoveTable[8][8] =
 
 int ChessHeuristic::operator ()(const Board& board, const std::vector<BoardMove>& moves, const BoardPiece& piece) const
 {
-	int value = GetMaterialValue(board, piece);
+	int value = GetMaterialValue(board, {piece.file, piece.rank}, piece.type, piece.owner);
 
 	for(const BoardMove& move : moves)
 	{
-		const BoardPiece* pPiece = board.GetPiece(move.from);
-		assert(pPiece != nullptr);
-
-		if(pPiece->piece.id() == piece.piece.id())
+		if(move.capturedType != 0)
 		{
-			if(move.capturedType != 0)
-			{
-				const BoardPiece* pTarget = board.GetPiece(move.to);
-				if(pTarget != nullptr)
-				{
-					value += GetMaterialValue(board, *pTarget) / 16;
-				}
-			}
+			value += GetMaterialValue(board, move.to, move.capturedType, !piece.owner) / 16;
 		}
 	}
 
@@ -124,48 +114,48 @@ int ChessHeuristic::operator ()(const Board& board, const std::vector<BoardMove>
 	return value;
 }
 
-int ChessHeuristic::GetMaterialValue(const Board& board, const BoardPiece& piece) const
+int ChessHeuristic::GetMaterialValue(const Board& board, const ivec2& pos, int type, int owner) const
 {
 	int value = 0;
-	int rank = ((piece.owner == 1) ? piece.rank - 1 : 8 - piece.rank);
+	int rank = ((owner == 1) ? pos.y - 1 : 8 - pos.y);
 
-	switch(piece.type)
+	switch(type)
 	{
 		case 'P':
 			value += 100;
 			if(board.GetNumPieces() > 16)
 			{
-				value += m_pawnMoveTable[rank][piece.file - 1];
+				value += m_pawnMoveTable[rank][pos.x - 1];
 			}
 			else
 			{
-				value += m_pawnEndGameMoveTable[rank][piece.file - 1];
+				value += m_pawnEndGameMoveTable[rank][pos.x - 1];
 			}
 			break;
 		case 'N':
 			value += 320;
-			value += m_knightMoveTable[rank][piece.file - 1];
+			value += m_knightMoveTable[rank][pos.x - 1];
 			break;
 		case 'B':
 			value += 330;
-			value += m_bishopMoveTable[rank][piece.file - 1];
+			value += m_bishopMoveTable[rank][pos.x - 1];
 			break;
 		case 'R':
 			value += 550;
-			value += m_rookMoveTable[rank][piece.file - 1];
+			value += m_rookMoveTable[rank][pos.x - 1];
 			break;
 		case 'Q':
 			value += 900;
-			value += m_queenMoveTable[rank][piece.file - 1];
+			value += m_queenMoveTable[rank][pos.x - 1];
 			break;
 		case 'K':
 			if(board.GetNumPieces() > 16)
 			{
-				value += m_kingMiddleGameTable[rank][piece.file - 1];
+				value += m_kingMiddleGameTable[rank][pos.x - 1];
 			}
 			else
 			{
-				value += m_kingEndGameMoveTable[rank][piece.file - 1];
+				value += m_kingEndGameMoveTable[rank][pos.x - 1];
 			}
 			break;
 		default:
