@@ -105,7 +105,7 @@ int ChessHeuristic::operator ()(const Board& board, const std::vector<BoardMove>
 	{
 		if(move.capturedType != 0)
 		{
-			value += GetMaterialValue(board, move.to, move.capturedType, !piece.owner) / 16;
+			value += GetMaterialValue(board, move.to, move.capturedType, !piece.owner) / 32;
 		}
 	}
 

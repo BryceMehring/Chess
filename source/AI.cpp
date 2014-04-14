@@ -189,20 +189,21 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int a, int b)
 	if(depth <= 0)
 		return m_board.GetWorth(playerID, ChessHeuristic());
 
-	std::vector<BoardMove> userMoves =  m_board.GetMoves(playerIDToMove);
-	auto firstIter = std::partition(userMoves.begin(), userMoves.end(), [&](const BoardMove& a) -> bool
+	auto functor = [&](const BoardMove& a, const BoardMove& b) -> bool
 	{
-		return (m_history[playerIDToMove][8*(a.from.x - 1) + (a.from.y - 1)][8*(a.to.x - 1) + (a.to.y - 1)] > 0);
-	});
+		return (m_history[playerIDToMove][8*(a.from.x - 1) + (a.from.y - 1)][8*(a.to.x - 1) + (a.to.y - 1)]) <
+			   (m_history[playerIDToMove][8*(b.from.x - 1) + (b.from.y - 1)][8*(b.to.x - 1) + (b.to.y - 1)]);
+	};
 
-	std::random_shuffle(firstIter, userMoves.end());
+	std::vector<BoardMove> userMoves =  m_board.GetMoves(playerIDToMove);
+	std::make_heap(userMoves.begin(), userMoves.end(), functor);
 
 	BoardMove bestMove;
 	bool bFoundBestMove = false;
 
-	for(unsigned int i = 0; i < userMoves.size(); ++i)
+	while(!userMoves.empty())
 	{
-		const BoardMove& top = userMoves[i];
+		const BoardMove& top = userMoves.front();
 
 		ApplyMove theMove(top, &m_board);
 		int score = MiniMax(depth - 1, playerID, !playerIDToMove, a, b);
@@ -211,7 +212,7 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int a, int b)
 		{
 			if(score >= b)
 			{
-				m_history[playerIDToMove][8*(top.from.x - 1) + (top.from.y - 1)][8*(top.to.x - 1) + (top.to.y - 1)] += 1;
+				m_history[playerIDToMove][8*(top.from.x - 1) + (top.from.y - 1)][8*(top.to.x - 1) + (top.to.y - 1)] += depth * depth;
 				return score;
 			}
 
@@ -226,7 +227,7 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int a, int b)
 		{
 			if(score <= a)
 			{
-				m_history[playerIDToMove][8*(top.from.x - 1) + (top.from.y - 1)][8*(top.to.x - 1) + (top.to.y - 1)] += 1;
+				m_history[playerIDToMove][8*(top.from.x - 1) + (top.from.y - 1)][8*(top.to.x - 1) + (top.to.y - 1)] += depth * depth;
 				return score;
 			}
 
@@ -237,11 +238,14 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int a, int b)
 				bestMove = top;
 			}
 		}
+
+		std::pop_heap(userMoves.begin(), userMoves.end(), functor);
+		userMoves.pop_back();
 	}
 
 	if(bFoundBestMove)
 	{
-		m_history[playerIDToMove][8*(bestMove.from.x - 1) + (bestMove.from.y - 1)][8*(bestMove.to.x - 1) + (bestMove.to.y - 1)] += 1;
+		m_history[playerIDToMove][8*(bestMove.from.x - 1) + (bestMove.from.y - 1)][8*(bestMove.to.x - 1) + (bestMove.to.y - 1)] += depth * depth;
 	}
 
 	if(playerIDToMove == 0)
