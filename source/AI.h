@@ -4,8 +4,9 @@
 #include "BaseAI.h"
 #include "Board.h"
 #include "Timer.h"
-#include <iostream>
 #include <random>
+#include <array>
+#include <queue>
 
 enum class TranspositionTableFlag
 {
@@ -21,10 +22,19 @@ struct TranspositionTableEntry
 	TranspositionTableFlag flag;
 };
 
+template < class T, unsigned int A, unsigned int B, unsigned int C >
+using array3d = std::array<std::array<std::array<int,C>,B>,A>;
+
+class HistoryFunctor;
+
 ///The class implementing gameplay logic.
 class AI: public BaseAI
 {
 public:
+
+  using HISTORY_ARRAY_TYPE = array3d<int,2,64,64>;
+  using FRONTIER_TYPE = std::priority_queue<BoardMove, std::vector<BoardMove>, HistoryFunctor>;
+
   AI(Connection* c, unsigned int depth);
   virtual const char* username();
   virtual const char* password();
@@ -40,6 +50,9 @@ private:
   bool MiniMax(int depth, int playerID, bool bEnableTime, BoardMove& moveOut);
   int MiniMax(int depth, int playerID, int playerIDToMove, int a, int b);
 
+  // Returns the frontier nodes for the current player to move as a priority queue
+  FRONTIER_TYPE MoveOrdering(int playerIDToMove);
+
   // Returns the amount of time that the AI has per turn
   std::uint64_t GetTimePerMove();
 
@@ -50,14 +63,28 @@ private:
   std::uint64_t m_totalTime;
   unsigned int m_count;
   unsigned int m_depth;
-  unsigned int m_bestIndex;
   bool m_bInCheckmate;
 
-  std::vector<BoardMove> m_rootMoves;
-
-  int m_history[2][64][64];
+  HISTORY_ARRAY_TYPE m_history;
 
   Timer m_minimaxTimer;
+
+  std::default_random_engine m_randEngine;
+};
+
+class HistoryFunctor
+{
+public:
+
+	static void SetHistoryTable(AI::HISTORY_ARRAY_TYPE::pointer pTable);
+	static void SetPlayerToMove(int id);
+
+	bool operator()(const BoardMove& a, const BoardMove& b) const;
+
+private:
+
+	static AI::HISTORY_ARRAY_TYPE::pointer m_historyTable;
+	static int m_playerIDToMove;
 };
 
 #endif

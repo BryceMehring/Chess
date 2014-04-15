@@ -3,17 +3,20 @@
 #include "Heuristics.h"
 
 #include <algorithm>
-#include <cassert>
 #include <limits>
 #include <functional>
 #include <cstring>
+#include <cassert>
 
 using std::cout;
 using std::endl;
 using namespace std::placeholders;
 
+AI::HISTORY_ARRAY_TYPE::pointer HistoryFunctor::m_historyTable = nullptr;
+int HistoryFunctor::m_playerIDToMove = 0;
+
 AI::AI(Connection* conn, unsigned int depth) : BaseAI(conn), m_totalTime(0), m_count(1),
-	m_depth(depth), m_bInCheckmate(false) {}
+	m_depth(depth), m_bInCheckmate(false), m_randEngine(std::chrono::system_clock::now().time_since_epoch().count()) {}
 
 const char* AI::username()
 {
@@ -28,7 +31,7 @@ const char* AI::password()
 //This function is run once, before your first turn.
 void AI::init()
 {
-	srand(time(0));
+	HistoryFunctor::SetHistoryTable(m_history.data());
 }
 
 //This function is called each time it is your turn.
@@ -81,9 +84,8 @@ void AI::MiniMax(BoardMove& moveOut)
 	m_minimaxTimer.Start();
 
 	m_bInCheckmate = false;
-	m_bestIndex = 0;
 
-	std::memset(m_history,0,sizeof(m_history));
+	std::memset(m_history.data(),0,sizeof(m_history));
 
 	while((!bEnableTimer || (m_minimaxTimer.GetTime() < GetTimePerMove())) && (d <= m_depth) && (!m_bInCheckmate || (d != 2)))
 	{
@@ -99,76 +101,61 @@ void AI::MiniMax(BoardMove& moveOut)
 		{
 #ifdef DEBUG_OUTPUT
 			cout << "No move was found at depth " << d << endl;
+			break;
 #endif
 		}
 
 		++d;
 	}
-
-#ifdef DEBUG_OUTPUT
-
-	cout << "Valid Moves: " << endl;
-	for(auto iter : m_rootMoves)
-	{
-		if(iter.from == moveOut.from)
-		{
-			cout << iter << endl;
-		}
-	}
-#endif
-
 }
 
 bool AI::MiniMax(int depth, int playerID, bool bEnableTimer, BoardMove& moveOut)
 {
 	bool bFoundMove = false;
+	BoardMove bestMove;
 
-	m_rootMoves = m_board.GetMoves(playerID);
-	if(!m_rootMoves.empty())
+	int a = std::numeric_limits<int>::min();
+	int b = std::numeric_limits<int>::max();
+
+	// Build a priority queue of the frontier nodes
+	FRONTIER_TYPE frontier = MoveOrdering(playerID);
+
+	while(!frontier.empty())
 	{
-		unsigned int index = 0;
+		ApplyMove theMove(frontier.top(), &m_board);
 
-		int a = std::numeric_limits<int>::min();
-		int b = std::numeric_limits<int>::max();
+		int val = MiniMax(depth - 1, playerID, !playerID, a, b);
 
-		// Move the previous best move to the front of the list of moves
-		assert(m_bestIndex < m_rootMoves.size());
-		std::swap(m_rootMoves[0],m_rootMoves[m_bestIndex]);
-
-		for(unsigned int i = 0; i < m_rootMoves.size(); ++i)
+		// If the new move is better than the last
+		if(val > a)
 		{
-			ApplyMove theMove(m_rootMoves[i], &m_board);
-
-			int val = MiniMax(depth - 1, playerID, !playerID, a, b);
-
-			// If the new move is better than the last
-			if(val > a)
-			{
-				index = i;
-				a = val;
-				bFoundMove = true;
+			a = val;
+			bestMove = frontier.top();
+			bFoundMove = true;
 
 #ifdef DEBUG_OUTPUT
-				cout << val << endl;
+			cout << val << endl;
 #endif
-			}
-
-			if(bEnableTimer)
-			{
-				// If we have ran out of time
-				if((m_minimaxTimer.GetTime()) >= GetTimePerMove())
-				{
-					bFoundMove = false;
-					break;
-				}
-			}
 		}
 
-		if(bFoundMove)
+		if(bEnableTimer)
 		{
-			moveOut = m_rootMoves[index];
-			m_bestIndex = index;
+			// If we have ran out of time
+			if((m_minimaxTimer.GetTime()) >= GetTimePerMove())
+			{
+				bFoundMove = false;
+				break;
+			}
 		}
+
+		HistoryFunctor::SetPlayerToMove(playerID);
+		frontier.pop();
+	}
+
+	if(bFoundMove)
+	{
+		m_history[playerID][8*(bestMove.from.x - 1) + (bestMove.from.y - 1)][8*(bestMove.to.x - 1) + (bestMove.to.y - 1)] += depth * depth;
+		moveOut = bestMove;
 	}
 
 	return bFoundMove;
@@ -177,34 +164,32 @@ bool AI::MiniMax(int depth, int playerID, bool bEnableTimer, BoardMove& moveOut)
 
 int AI::MiniMax(int depth, int playerID, int playerIDToMove, int a, int b)
 {
+	// If a checkmate has been found, return a large number
 	if(m_board.IsInCheckmate(!playerID))
 	{
 		m_bInCheckmate = true;
 		return 1000000;
 	}
 
+	// If a stalemate is found, return a really small number
 	if(m_board.IsInStalemate(!playerID))
 		return -1000000;
 
+	// If this is a leaf node, return the heuristic value of the state for max
 	if(depth <= 0)
 		return m_board.GetWorth(playerID, ChessHeuristic());
 
-	auto functor = [&](const BoardMove& a, const BoardMove& b) -> bool
-	{
-		return (m_history[playerIDToMove][8*(a.from.x - 1) + (a.from.y - 1)][8*(a.to.x - 1) + (a.to.y - 1)]) <
-			   (m_history[playerIDToMove][8*(b.from.x - 1) + (b.from.y - 1)][8*(b.to.x - 1) + (b.to.y - 1)]);
-	};
-
-	std::vector<BoardMove> userMoves =  m_board.GetMoves(playerIDToMove);
-	std::make_heap(userMoves.begin(), userMoves.end(), functor);
+	// Build a priority queue of the frontier nodes
+	FRONTIER_TYPE frontier = MoveOrdering(playerIDToMove);
 
 	BoardMove bestMove;
 	bool bFoundBestMove = false;
 
-	while(!userMoves.empty())
+	while(!frontier.empty())
 	{
-		const BoardMove& top = userMoves.front();
+		const BoardMove& top = frontier.top();
 
+		// Apply the move in the queue with the higest priority
 		ApplyMove theMove(top, &m_board);
 		int score = MiniMax(depth - 1, playerID, !playerIDToMove, a, b);
 
@@ -239,8 +224,8 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int a, int b)
 			}
 		}
 
-		std::pop_heap(userMoves.begin(), userMoves.end(), functor);
-		userMoves.pop_back();
+		HistoryFunctor::SetPlayerToMove(playerIDToMove);
+		frontier.pop();
 	}
 
 	if(bFoundBestMove)
@@ -252,6 +237,15 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int a, int b)
 		return a;
 
 	return b;
+}
+
+AI::FRONTIER_TYPE AI::MoveOrdering(int playerIDToMove)
+{
+	HistoryFunctor::SetPlayerToMove(playerIDToMove);
+
+	std::vector<BoardMove> moves = m_board.GetMoves(playerIDToMove);
+	std::shuffle(std::begin(moves), std::end(moves), m_randEngine);
+	return FRONTIER_TYPE(HistoryFunctor(), std::move(moves));
 }
 
 std::uint64_t AI::GetTimePerMove()
@@ -308,4 +302,21 @@ void AI::DrawBoard() const
 		}
 		cout<<endl<<"+---+---+---+---+---+---+---+---+"<<endl;
 	}
+}
+
+void HistoryFunctor::SetHistoryTable(AI::HISTORY_ARRAY_TYPE::pointer pTable)
+{
+	assert(pTable != nullptr);
+	m_historyTable = pTable;
+}
+
+void HistoryFunctor::SetPlayerToMove(int id)
+{
+	m_playerIDToMove = id;
+}
+
+bool HistoryFunctor::operator()(const BoardMove& a, const BoardMove& b) const
+{
+	return (m_historyTable[m_playerIDToMove][8*(a.from.x - 1) + (a.from.y - 1)][8*(a.to.x - 1) + (a.to.y - 1)]) <
+		   (m_historyTable[m_playerIDToMove][8*(b.from.x - 1) + (b.from.y - 1)][8*(b.to.x - 1) + (b.to.y - 1)]);
 }
