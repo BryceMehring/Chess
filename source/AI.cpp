@@ -208,7 +208,7 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int a, int b)
 		ApplyMove theMove(top, &m_board);
 		int score = MiniMax(depth - 1, playerID, !playerIDToMove, a, b);
 
-		if(playerIDToMove == 0)
+		if(playerIDToMove == playerID)
 		{
 			if(score >= b)
 			{
@@ -248,7 +248,7 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int a, int b)
 		m_history[playerIDToMove][8*(bestMove.from.x - 1) + (bestMove.from.y - 1)][8*(bestMove.to.x - 1) + (bestMove.to.y - 1)] += depth * depth;
 	}
 
-	if(playerIDToMove == 0)
+	if(playerIDToMove == playerID)
 		return a;
 
 	return b;
