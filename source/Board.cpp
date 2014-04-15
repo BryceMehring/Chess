@@ -582,7 +582,7 @@ bool Board::IsInCheck(int playerID)
 	// Check if any of their pieces are attacking our king
 	auto iter = std::find_if(validMoves.begin(),validMoves.end(),[&](const BoardMove& m) -> bool
 	{
-		return (m.to.x == m_kingPos[playerID].x) && (m.to.y == m_kingPos[playerID].y);
+		return (m.to == m_kingPos[playerID]);
 	});
 
 	return iter != validMoves.end();
