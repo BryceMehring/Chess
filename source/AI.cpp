@@ -60,9 +60,11 @@ bool AI::run()
 
 #ifdef DEBUG_OUTPUT
 	m_totalTime += timer.GetTime();
-	cout << "Average Time Spent: " << m_totalTime / m_count << endl;
-	cout << "Total Time Spent: " << m_totalTime << endl;
-	cout << "Servers time: " << 900 - players[playerID()].time() << endl;
+	cout << "Average Time: " << m_totalTime / m_count << endl;
+	cout << "Server time: " << 900 - players[playerID()].time() << endl;
+	cout << "Move Cache Collision ratio: " << m_board.GetLoadFactor() << endl;
+	cout << "Move Cache Hit ratio: " << m_board.GetMoveCacheHitRatio() << endl;
+	cout << "Hash table size: " << m_board.GetHashTableSize() << endl;
 
 	m_count++;
 #endif
@@ -244,8 +246,8 @@ AI::FRONTIER_TYPE AI::MoveOrdering(int playerIDToMove)
 	HistoryFunctor::SetPlayerToMove(playerIDToMove);
 
 	std::vector<BoardMove> moves = m_board.GetMoves(playerIDToMove);
-	std::shuffle(std::begin(moves), std::end(moves), m_randEngine);
-	return FRONTIER_TYPE(HistoryFunctor(), std::move(moves));
+	std::shuffle(moves.begin(), moves.end(), m_randEngine);
+	return (FRONTIER_TYPE(HistoryFunctor(), std::move(moves)));
 }
 
 std::uint64_t AI::GetTimePerMove()

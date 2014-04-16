@@ -8,7 +8,6 @@
 #include <unordered_map>
 #include <deque>
 #include <functional>
-
 #include <vector>
 
 struct BoardPiece
@@ -46,23 +45,12 @@ private:
 	ivec2 m_oldKingPos;
 };
 
-class BoardMoveHash
+class BoardHash
 {
 public:
 
-	std::size_t operator()(const std::vector<std::vector<int>>& key) const
-	{
-		std::size_t h = 5381;
-		for(const auto& iter : key)
-		{
-			for(int i : iter)
-			{
-				h ^= i + 0x9e3779b9 + (h<<6) + (h>>2);
-			}
-		}
+	std::size_t operator()(const std::vector<std::vector<int>>& key) const;
 
-		return h;
-	}
 };
 
 // Defines a chess board which manages generating valid action states
@@ -109,7 +97,17 @@ public:
 	// Returns true if the specified player is in stalemate
 	bool IsInStalemate(int playerID);
 
+	// Returns the number of pieces on the board
 	unsigned int GetNumPieces() const;
+
+	// Returns the percentage of collisions of elements in the move cache
+	float GetLoadFactor() const;
+
+	// Returns the hit ratio into the move cache
+	float GetMoveCacheHitRatio() const;
+
+	// Returns the number of elements in the move cache
+	unsigned int GetHashTableSize() const;
 
 private:
 
@@ -137,7 +135,7 @@ private:
 	// Adds a move to the move list only if after applying the move, it does not put us in check, or if bCheck is false
 	void AddMove(const BoardMove& move, bool bCheck, std::vector<BoardMove>& moves);
 
-	// Returns true if the current state of the board is in check
+	// Returns true if playerID is in check
 	bool IsInCheck(int playerID);
 
 	// Returns true if there are no legal moves for the specified player
@@ -157,13 +155,16 @@ private:
 	std::vector<std::vector<int>> m_board;
 	std::unordered_map<int,BoardPiece> m_pieces;
 
-	std::unordered_map<std::vector<std::vector<int>>, std::vector<BoardMove>, BoardMoveHash> m_validMoveCache[2];
+	std::unordered_map<std::vector<std::vector<int>>, std::vector<BoardMove>, BoardHash> m_validMoveCache[2];
 
 	std::deque<BoardMove> m_moveHistory;
 
 	ivec2 m_kingPos[2];
 	BoardMove m_LastMove;
 	int m_turnsToStalemate;
+
+	int m_cacheHit;
+	int m_cacheTotal;
 };
 
 #endif // _BOARD_

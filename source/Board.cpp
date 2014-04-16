@@ -1,8 +1,7 @@
 #include "Board.h"
-#include <cassert>
 #include <algorithm>
 #include <iostream>
-
+#include <cassert>
 
 using std::cout;
 using std::endl;
@@ -129,13 +128,33 @@ void ApplyMove::ApplyCastleMove(bool bApply)
 	std::swap(m_pBoard->m_board[rookFile - 1][m_move.from.y - 1], m_pBoard->m_board[rookToFile - 1][m_move.from.y - 1]);
 }
 
-Board::Board() : m_turnsToStalemate(0)
+std::size_t BoardHash::operator()(const std::vector<std::vector<int>>& key) const
+{
+	std::size_t h = 5381;
+	for(const auto& iter : key)
+	{
+		for(int i : iter)
+		{
+			h ^= i + 0x9e3779b9 + (h<<6) + (h>>2);
+		}
+	}
+
+	return h;
+}
+
+Board::Board() : m_turnsToStalemate(0), m_cacheHit(0), m_cacheTotal(0)
 {
 	m_board.resize(8);
 
 	for(auto& iter : m_board)
 	{
 		iter.resize(8);
+	}
+
+	// Give enough buckets to the move cache
+	for(auto& iter : m_validMoveCache)
+	{
+		iter.rehash(10000);
 	}
 }
 
@@ -154,7 +173,7 @@ void Board::Update(int turnsToStalemate, const std::vector<Move>& moves, const s
 			m_kingPos[p.owner()] = {p.file(), p.rank()};
 		}
 
-		unsigned int index = p.id() * p.type();
+		unsigned int index = p.id();
 
 		m_board[p.file() - 1][p.rank() - 1] = index;
 		m_pieces.insert({index, {p, p.owner(), p.file(), p.rank(), p.hasMoved(), p.type()}});
@@ -181,9 +200,12 @@ void Board::Update(int turnsToStalemate, const std::vector<Move>& moves, const s
 
 const std::vector<BoardMove>& Board::GetMoves(int playerID)
 {
+	m_cacheTotal++;
+
 	auto iter = m_validMoveCache[playerID].find(m_board);
 	if(iter != m_validMoveCache[playerID].end())
 	{
+		m_cacheHit++;
 		return iter->second;
 	}
 
@@ -267,6 +289,31 @@ bool Board::IsInStalemate(int playerID)
 unsigned int Board::GetNumPieces() const
 {
 	return m_pieces.size();
+}
+
+float Board::GetLoadFactor() const
+{
+	unsigned int nbuckets = m_validMoveCache[0].bucket_count();
+	unsigned int collisions = 0;
+	for(unsigned int i = 0; i < nbuckets; ++i)
+	{
+		if(m_validMoveCache[0].bucket_size(i) > 1)
+		{
+			collisions += (m_validMoveCache[0].bucket_size(i) - 1);
+		}
+	}
+
+	return collisions / (float)m_validMoveCache[0].size();
+}
+
+float Board::GetMoveCacheHitRatio() const
+{
+	return m_cacheHit / (float)m_cacheTotal;
+}
+
+unsigned int Board::GetHashTableSize() const
+{
+	return m_validMoveCache[0].size();
 }
 
 std::vector<BoardMove> Board::GetMoves(int playerID, bool bCheck)
@@ -690,6 +737,8 @@ bool Board::IsThreeBoardStateStalemate() const
 
 void Board::Clear()
 {
+	m_cacheHit = m_cacheTotal = 0;
+
 	// Clear the board of pieces
 	for(auto& fileIter : m_board)
 	{
