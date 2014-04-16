@@ -20,7 +20,7 @@ int main(int argc, char** argv)
     return 1;
   }
 
-  unsigned int depth = 8;
+  unsigned int depth = std::numeric_limits<unsigned int>::max();
   if(argc > 3)
   {
 	depth = atoi(argv[3]);
