@@ -22,8 +22,8 @@ struct TranspositionTableEntry
 	TranspositionTableFlag flag;
 };
 
-template < class T, unsigned int A, unsigned int B, unsigned int C >
-using array3d = std::array<std::array<std::array<int,C>,B>,A>;
+//template < class T, unsigned int A, unsigned int B, unsigned int C >
+//using array3d = std::array<std::array<std::array<int,C>,B>,A>;
 
 class HistoryFunctor;
 
@@ -32,8 +32,10 @@ class AI: public BaseAI
 {
 public:
 
-  using HISTORY_ARRAY_TYPE = array3d<int,2,64,64>;
-  using FRONTIER_TYPE = std::priority_queue<BoardMove, std::vector<BoardMove>, HistoryFunctor>;
+  typedef std::array<std::array<std::array<int,64>,64>,2> HISTORY_ARRAY_TYPE;
+  //using HISTORY_ARRAY_TYPE = array3d<int,2,64,64>;
+  typedef std::priority_queue<BoardMove, std::vector<BoardMove>, HistoryFunctor> FRONTIER_TYPE;
+  //using FRONTIER_TYPE = std::priority_queue<BoardMove, std::vector<BoardMove>, HistoryFunctor>;
 
   AI(Connection* c, unsigned int depth);
   virtual const char* username();
