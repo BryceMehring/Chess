@@ -231,7 +231,7 @@ int Board::GetWorth(int playerID, const std::function<int(const Board& board, co
 		}
 	}
 
-	return (iTotal[playerID] - iTotal[!playerID]);
+	return (iTotal[playerID] - iTotal[!playerID]) + moves.size();
 }
 
 BoardPiece* Board::GetPiece(const ivec2 &pos)

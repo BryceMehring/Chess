@@ -109,8 +109,6 @@ int ChessHeuristic::operator ()(const Board& board, const std::vector<BoardMove>
 		}
 	}
 
-	value += moves.size() / 2;
-
 	return value;
 }
 
