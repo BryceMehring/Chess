@@ -12,9 +12,6 @@ using std::cout;
 using std::endl;
 using namespace std::placeholders;
 
-AI::HISTORY_ARRAY_TYPE::pointer HistoryFunctor::m_historyTable = nullptr;
-int HistoryFunctor::m_playerIDToMove = 0;
-
 AI::AI(Connection* conn, unsigned int depth) : BaseAI(conn), m_totalTime(0), m_count(1),
 	m_depth(depth), m_bInCheckmate(false), m_randEngine(std::chrono::system_clock::now().time_since_epoch().count()) {}
 
@@ -31,7 +28,6 @@ const char* AI::password()
 //This function is run once, before your first turn.
 void AI::init()
 {
-	HistoryFunctor::SetHistoryTable(m_history.data());
 }
 
 //This function is called each time it is your turn.
@@ -122,9 +118,9 @@ bool AI::MiniMax(int depth, int playerID, bool bEnableTimer, BoardMove& moveOut)
 	// Build a priority queue of the frontier nodes
 	FRONTIER_TYPE frontier = MoveOrdering(playerID);
 
-	while(!frontier.empty())
+	for(const BoardMove& currentMove : frontier)
 	{
-		ApplyMove theMove(frontier.top(), &m_board);
+		ApplyMove theMove(currentMove, &m_board);
 
 		int val = MiniMax(depth - 1, playerID, !playerID, a, b);
 
@@ -132,7 +128,7 @@ bool AI::MiniMax(int depth, int playerID, bool bEnableTimer, BoardMove& moveOut)
 		if(val > a)
 		{
 			a = val;
-			bestMove = frontier.top();
+			bestMove = currentMove;
 			bFoundMove = true;
 
 #ifdef DEBUG_OUTPUT
@@ -149,9 +145,6 @@ bool AI::MiniMax(int depth, int playerID, bool bEnableTimer, BoardMove& moveOut)
 				break;
 			}
 		}
-
-		HistoryFunctor::SetPlayerToMove(playerID);
-		frontier.pop();
 	}
 
 	if(bFoundMove)
@@ -187,19 +180,17 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int a, int b)
 	BoardMove bestMove;
 	bool bFoundBestMove = false;
 
-	while(!frontier.empty())
+	for(const BoardMove& currentMove : frontier)
 	{
-		const BoardMove& top = frontier.top();
-
 		// Apply the move in the queue with the higest priority
-		ApplyMove theMove(top, &m_board);
+		ApplyMove theMove(currentMove, &m_board);
 		int score = MiniMax(depth - 1, playerID, !playerIDToMove, a, b);
 
 		if(playerIDToMove == playerID)
 		{
 			if(score >= b)
 			{
-				//m_history[playerIDToMove][8*(top.from.x - 1) + (top.from.y - 1)][8*(top.to.x - 1) + (top.to.y - 1)] += depth * depth;
+				m_history[playerIDToMove][8*(currentMove.from.x - 1) + (currentMove.from.y - 1)][8*(currentMove.to.x - 1) + (currentMove.to.y - 1)] += depth * depth;
 				return score;
 			}
 
@@ -207,14 +198,14 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int a, int b)
 			{
 				bFoundBestMove = true;
 				a = score;
-				bestMove = top;
+				bestMove = currentMove;
 			}
 		}
 		else
 		{
 			if(score <= a)
 			{
-				//m_history[playerIDToMove][8*(top.from.x - 1) + (top.from.y - 1)][8*(top.to.x - 1) + (top.to.y - 1)] += depth * depth;
+				m_history[playerIDToMove][8*(currentMove.from.x - 1) + (currentMove.from.y - 1)][8*(currentMove.to.x - 1) + (currentMove.to.y - 1)] += depth * depth;
 				return score;
 			}
 
@@ -222,12 +213,9 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int a, int b)
 			{
 				bFoundBestMove = true;
 				b = score;
-				bestMove = top;
+				bestMove = currentMove;
 			}
 		}
-
-		HistoryFunctor::SetPlayerToMove(playerIDToMove);
-		frontier.pop();
 	}
 
 	if(bFoundBestMove)
@@ -243,11 +231,16 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int a, int b)
 
 AI::FRONTIER_TYPE AI::MoveOrdering(int playerIDToMove)
 {
-	HistoryFunctor::SetPlayerToMove(playerIDToMove);
-
 	std::vector<BoardMove> moves = m_board.GetMoves(playerIDToMove);
 	std::shuffle(moves.begin(), moves.end(), m_randEngine);
-	return (FRONTIER_TYPE(HistoryFunctor(), std::move(moves)));
+
+	std::sort(moves.begin(), moves.end(), [&](const BoardMove& a, const BoardMove& b) -> bool
+	{
+		return (m_history[playerIDToMove][8*(a.from.x - 1) + (a.from.y - 1)][8*(a.to.x - 1) + (a.to.y - 1)]) >
+			   (m_history[playerIDToMove][8*(b.from.x - 1) + (b.from.y - 1)][8*(b.to.x - 1) + (b.to.y - 1)]);
+	});
+
+	return std::move(moves);
 }
 
 std::uint64_t AI::GetTimePerMove()
@@ -304,21 +297,4 @@ void AI::DrawBoard() const
 		}
 		cout<<endl<<"+---+---+---+---+---+---+---+---+"<<endl;
 	}
-}
-
-void HistoryFunctor::SetHistoryTable(AI::HISTORY_ARRAY_TYPE::pointer pTable)
-{
-	assert(pTable != nullptr);
-	m_historyTable = pTable;
-}
-
-void HistoryFunctor::SetPlayerToMove(int id)
-{
-	m_playerIDToMove = id;
-}
-
-bool HistoryFunctor::operator()(const BoardMove& a, const BoardMove& b) const
-{
-	return (m_historyTable[m_playerIDToMove][8*(a.from.x - 1) + (a.from.y - 1)][8*(a.to.x - 1) + (a.to.y - 1)]) <
-		   (m_historyTable[m_playerIDToMove][8*(b.from.x - 1) + (b.from.y - 1)][8*(b.to.x - 1) + (b.to.y - 1)]);
 }

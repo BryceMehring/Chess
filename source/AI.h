@@ -34,7 +34,8 @@ public:
 
   typedef std::array<std::array<std::array<int,64>,64>,2> HISTORY_ARRAY_TYPE;
   //using HISTORY_ARRAY_TYPE = array3d<int,2,64,64>;
-  typedef std::priority_queue<BoardMove, std::vector<BoardMove>, HistoryFunctor> FRONTIER_TYPE;
+  //typedef std::priority_queue<BoardMove, std::vector<BoardMove>, HistoryFunctor> FRONTIER_TYPE;
+  typedef std::vector<BoardMove> FRONTIER_TYPE;
   //using FRONTIER_TYPE = std::priority_queue<BoardMove, std::vector<BoardMove>, HistoryFunctor>;
 
   AI(Connection* c, unsigned int depth);
@@ -72,21 +73,6 @@ private:
   Timer m_minimaxTimer;
 
   std::default_random_engine m_randEngine;
-};
-
-class HistoryFunctor
-{
-public:
-
-	static void SetHistoryTable(AI::HISTORY_ARRAY_TYPE::pointer pTable);
-	static void SetPlayerToMove(int id);
-
-	bool operator()(const BoardMove& a, const BoardMove& b) const;
-
-private:
-
-	static AI::HISTORY_ARRAY_TYPE::pointer m_historyTable;
-	static int m_playerIDToMove;
 };
 
 #endif
