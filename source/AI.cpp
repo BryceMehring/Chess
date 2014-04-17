@@ -199,7 +199,7 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int a, int b)
 		{
 			if(score >= b)
 			{
-				m_history[playerIDToMove][8*(top.from.x - 1) + (top.from.y - 1)][8*(top.to.x - 1) + (top.to.y - 1)] += depth * depth;
+				//m_history[playerIDToMove][8*(top.from.x - 1) + (top.from.y - 1)][8*(top.to.x - 1) + (top.to.y - 1)] += depth * depth;
 				return score;
 			}
 
@@ -214,7 +214,7 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int a, int b)
 		{
 			if(score <= a)
 			{
-				m_history[playerIDToMove][8*(top.from.x - 1) + (top.from.y - 1)][8*(top.to.x - 1) + (top.to.y - 1)] += depth * depth;
+				//m_history[playerIDToMove][8*(top.from.x - 1) + (top.from.y - 1)][8*(top.to.x - 1) + (top.to.y - 1)] += depth * depth;
 				return score;
 			}
 
