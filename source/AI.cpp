@@ -12,6 +12,11 @@ using std::cout;
 using std::endl;
 using namespace std::placeholders;
 
+static unsigned int GetHistoryTableIndex(const ivec2& pos)
+{
+	return (8*(pos.x - 1) + (pos.y - 1));
+}
+
 AI::AI(Connection* conn, unsigned int depth) : BaseAI(conn), m_totalTime(0), m_count(1),
 	m_depth(depth), m_bInCheckmate(false), m_randEngine(std::chrono::system_clock::now().time_since_epoch().count()) {}
 
@@ -112,8 +117,8 @@ bool AI::MiniMax(int depth, int playerID, bool bEnableTimer, BoardMove& moveOut)
 	bool bFoundMove = false;
 	BoardMove bestMove;
 
-	int a = std::numeric_limits<int>::min();
-	int b = std::numeric_limits<int>::max();
+	int alpha = -100000000;
+	int beta = 100000000;
 
 	// Build a priority queue of the frontier nodes
 	FRONTIER_TYPE frontier = MoveOrdering(playerID);
@@ -122,12 +127,12 @@ bool AI::MiniMax(int depth, int playerID, bool bEnableTimer, BoardMove& moveOut)
 	{
 		ApplyMove theMove(currentMove, &m_board);
 
-		int val = MiniMax(depth - 1, playerID, !playerID, a, b);
+		int val = -MiniMax(depth - 1, playerID, !playerID, -beta, -alpha);
 
 		// If the new move is better than the last
-		if(val > a)
+		if(val > alpha)
 		{
-			a = val;
+			alpha = val;
 			bestMove = currentMove;
 			bFoundMove = true;
 
@@ -149,7 +154,7 @@ bool AI::MiniMax(int depth, int playerID, bool bEnableTimer, BoardMove& moveOut)
 
 	if(bFoundMove)
 	{
-		m_history[playerID][8*(bestMove.from.x - 1) + (bestMove.from.y - 1)][8*(bestMove.to.x - 1) + (bestMove.to.y - 1)] += depth * depth;
+		m_history[playerID][GetHistoryTableIndex(bestMove.from)][GetHistoryTableIndex(bestMove.to)] += (depth * depth) + 1;
 		moveOut = bestMove;
 	}
 
@@ -157,22 +162,38 @@ bool AI::MiniMax(int depth, int playerID, bool bEnableTimer, BoardMove& moveOut)
 
 }
 
-int AI::MiniMax(int depth, int playerID, int playerIDToMove, int a, int b)
+int AI::MiniMax(int depth, int playerID, int playerIDToMove, int alpha, int beta)
 {
+	// playerIDToMove made a move
+
 	// If a checkmate has been found, return a large number
-	if(m_board.IsInCheckmate(!playerID))
+	if(m_board.IsInCheckmate(playerIDToMove))
 	{
-		m_bInCheckmate = true;
-		return 1000000;
+		if(playerID != playerIDToMove)
+		{
+			m_bInCheckmate = true;
+		}
+		return -1000000;
 	}
 
-	// If a stalemate is found, return a really small number
-	if(m_board.IsInStalemate(!playerID))
-		return -1000000;
+	// If a stalemate is found, return 0 which is neutral for both sides
+	if(m_board.IsInStalemate(playerIDToMove))
+		return 0;
 
 	// If this is a leaf node, return the heuristic value of the state for max
 	if(depth <= 0)
-		return m_board.GetWorth(playerID, ChessHeuristic());
+	{
+		int stand_pat = m_board.GetWorth(playerIDToMove, ChessHeuristic());
+
+		if( (stand_pat >= beta) || (depth <= -1))
+		{
+			return stand_pat;
+		}
+		if(stand_pat > alpha)
+		{
+			alpha = stand_pat;
+		}
+	}
 
 	// Build a priority queue of the frontier nodes
 	FRONTIER_TYPE frontier = MoveOrdering(playerIDToMove);
@@ -182,51 +203,39 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int a, int b)
 
 	for(const BoardMove& currentMove : frontier)
 	{
-		// Apply the move in the queue with the higest priority
-		ApplyMove theMove(currentMove, &m_board);
-		int score = MiniMax(depth - 1, playerID, !playerIDToMove, a, b);
-
-		if(playerIDToMove == playerID)
+		// If we are applying Quiescence Search, only look at attacking moves
+		if(depth <= 0)
 		{
-			if(score >= b)
+			if(currentMove.capturedType == 0)
 			{
-				m_history[playerIDToMove][8*(currentMove.from.x - 1) + (currentMove.from.y - 1)][8*(currentMove.to.x - 1) + (currentMove.to.y - 1)] += depth * depth;
-				return score;
-			}
-
-			if(score > a)
-			{
-				bFoundBestMove = true;
-				a = score;
-				bestMove = currentMove;
+				continue;
 			}
 		}
-		else
-		{
-			if(score <= a)
-			{
-				m_history[playerIDToMove][8*(currentMove.from.x - 1) + (currentMove.from.y - 1)][8*(currentMove.to.x - 1) + (currentMove.to.y - 1)] += depth * depth;
-				return score;
-			}
 
-			if(score < b)
-			{
-				bFoundBestMove = true;
-				b = score;
-				bestMove = currentMove;
-			}
+		// Apply the move in the queue with the higest priority
+		ApplyMove theMove(currentMove, &m_board);
+		int score = -MiniMax(depth - 1, playerID, !playerIDToMove, -beta, -alpha);
+
+		if(score >= beta)
+		{
+			m_history[playerIDToMove][GetHistoryTableIndex(currentMove.from)][GetHistoryTableIndex(currentMove.to)] += (depth * depth) + 1;
+			return beta;
+		}
+
+		if(score > alpha)
+		{
+			bFoundBestMove = true;
+			alpha = score;
+			bestMove = currentMove;
 		}
 	}
 
 	if(bFoundBestMove)
 	{
-		m_history[playerIDToMove][8*(bestMove.from.x - 1) + (bestMove.from.y - 1)][8*(bestMove.to.x - 1) + (bestMove.to.y - 1)] += depth * depth;
+		m_history[playerIDToMove][GetHistoryTableIndex(bestMove.from)][GetHistoryTableIndex(bestMove.to)] += (depth * depth) + 1;
 	}
 
-	if(playerIDToMove == playerID)
-		return a;
-
-	return b;
+	return alpha;
 }
 
 AI::FRONTIER_TYPE AI::MoveOrdering(int playerIDToMove)
@@ -236,8 +245,8 @@ AI::FRONTIER_TYPE AI::MoveOrdering(int playerIDToMove)
 
 	std::sort(moves.begin(), moves.end(), [&](const BoardMove& a, const BoardMove& b) -> bool
 	{
-		return (m_history[playerIDToMove][8*(a.from.x - 1) + (a.from.y - 1)][8*(a.to.x - 1) + (a.to.y - 1)]) >
-			   (m_history[playerIDToMove][8*(b.from.x - 1) + (b.from.y - 1)][8*(b.to.x - 1) + (b.to.y - 1)]);
+		return (m_history[playerIDToMove][GetHistoryTableIndex(a.from)][GetHistoryTableIndex(a.to)]) >
+			   (m_history[playerIDToMove][GetHistoryTableIndex(b.from)][GetHistoryTableIndex(b.to)]);
 	});
 
 	return std::move(moves);
