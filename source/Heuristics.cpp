@@ -97,18 +97,9 @@ const int ChessHeuristic::m_kingEndGameMoveTable[8][8] =
 	{-50,-30,-30,-30,-30,-30,-30,-50}
 };
 
-int ChessHeuristic::operator ()(const Board& board, const std::vector<BoardMove>& moves, const BoardPiece& piece) const
+int ChessHeuristic::operator ()(const Board& board, const BoardPiece& piece) const
 {
 	int value = GetMaterialValue(board, {piece.file, piece.rank}, piece.type, piece.owner);
-
-	for(const BoardMove& move : moves)
-	{
-		if(move.capturedType != 0)
-		{
-			value += GetMaterialValue(board, move.to, move.capturedType, !piece.owner) / 32;
-		}
-	}
-
 	return value;
 }
 

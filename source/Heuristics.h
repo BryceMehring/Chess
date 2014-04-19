@@ -10,7 +10,7 @@ class ChessHeuristic
 {
 public:
 
-	int operator ()(const Board&, const std::vector<BoardMove>&, const BoardPiece&) const;
+	int operator ()(const Board&, const BoardPiece&) const;
 
 private:
 

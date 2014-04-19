@@ -213,10 +213,8 @@ const std::vector<BoardMove>& Board::GetMoves(int playerID)
 	return iterPair.first->second;
 }
 
-int Board::GetWorth(int playerID, const std::function<int(const Board& board, const std::vector<BoardMove>&, const BoardPiece&)>& heuristic)
+int Board::GetWorth(int playerID, const std::function<int(const Board& board, const BoardPiece&)>& heuristic)
 {
-	std::vector<BoardMove> moves = GetMoves(playerID, false);
-
 	int iTotal[2] = {0,0};
 	for(auto& iter : m_board)
 	{
@@ -226,12 +224,12 @@ int Board::GetWorth(int playerID, const std::function<int(const Board& board, co
 			if(iter != m_pieces.end())
 			{
 				const BoardPiece& piece = iter->second;
-				iTotal[piece.owner] += heuristic(*this, moves, piece);
+				iTotal[piece.owner] += heuristic(*this, piece);
 			}
 		}
 	}
 
-	return (iTotal[playerID] - iTotal[!playerID]) + moves.size();
+	return (iTotal[playerID] - iTotal[!playerID]);
 }
 
 BoardPiece* Board::GetPiece(const ivec2 &pos)
