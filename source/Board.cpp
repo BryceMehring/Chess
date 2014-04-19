@@ -681,7 +681,6 @@ bool Board::IsNotEnoughPiecesStalemate() const
 	// king against king
 	if(bOnlyKing[0] && bOnlyKing[1])
 	{
-		cout << "King vs. king stalemate detected!" << endl;
 		return true;
 	}
 
