@@ -7,6 +7,10 @@
 #include <random>
 #include <array>
 #include <queue>
+#include <thread>
+#include <atomic>
+#include <mutex>
+#include <condition_variable>
 
 enum class TranspositionTableFlag
 {
@@ -17,8 +21,8 @@ enum class TranspositionTableFlag
 
 struct TranspositionTableEntry
 {
-	float value;
-	unsigned int depth;
+	int value;
+	int depth;
 	TranspositionTableFlag flag;
 };
 
@@ -42,9 +46,9 @@ public:
 private:
 
   // Finds the best move from minimax with alpha beta pruning, Quiescence Search, and History Table
-  void MiniMax(BoardMove& moveOut);
-  bool MiniMax(int depth, int playerID, bool bEnableTime, BoardMove& moveOut);
-  int MiniMax(int depth, int playerID, int playerIDToMove, int a, int b);
+  void MiniMax(int playerID, bool bPonder, BoardMove& moveOut);
+  bool MiniMax(int depth, bool bPonder, int playerID, bool bEnableTime, BoardMove& moveOut);
+  int MiniMax(int depth, bool bPonder, int playerID, int playerIDToMove, int a, int b);
 
   // Returns the frontier nodes for the current player to move sorted from high to low based on the history table
   FRONTIER_TYPE MoveOrdering(int playerIDToMove);
@@ -62,6 +66,16 @@ private:
   unsigned int m_count;
   unsigned int m_depth;
   bool m_bInCheckmate;
+
+  std::thread m_ponderThread;
+  std::mutex m_mutex;
+  std::condition_variable m_cv;
+  std::atomic_bool m_bExit;
+  std::atomic_bool m_bStopMinimax;
+  BoardMove m_bestMove;
+  bool m_bEnablePondering;
+
+  std::unordered_map<std::vector<std::vector<int>>, TranspositionTableEntry, BoardHash> m_transpositionTable;
 
   HISTORY_ARRAY_TYPE m_history;
 

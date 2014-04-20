@@ -18,7 +18,7 @@ static unsigned int GetHistoryTableIndex(const ivec2& pos)
 }
 
 AI::AI(Connection* conn, unsigned int depth) : BaseAI(conn), m_totalTime(0), m_count(1),
-	m_depth(depth), m_bInCheckmate(false), m_randEngine(std::chrono::system_clock::now().time_since_epoch().count()) {}
+	m_depth(depth), m_bInCheckmate(false), m_bExit(false), m_bStopMinimax(false), m_randEngine(std::chrono::system_clock::now().time_since_epoch().count()) {}
 
 const char* AI::username()
 {
@@ -33,12 +33,41 @@ const char* AI::password()
 //This function is run once, before your first turn.
 void AI::init()
 {
+	auto ponderMethod = [this]()
+	{
+		std::unique_lock<std::mutex> lck(m_mutex);
+		while(true)
+		{
+			m_cv.wait(lck);
+
+			if(m_bExit)
+				break;
+
+			BoardMove move;
+
+			ApplyMove theMove(m_bestMove, &m_board);
+			MiniMax(!playerID(), true, move);
+			std::memset(m_history.data(),0,sizeof(m_history));
+		}
+	};
+
+	m_ponderThread = std::thread(ponderMethod);
 }
 
 //This function is called each time it is your turn.
 //Return true to end your turn, return false to ask the server for updated information.
 bool AI::run()
 {
+
+	Timer waitTimer;
+	waitTimer.Start();
+
+	m_bStopMinimax = true;
+	std::unique_lock<std::mutex> lck(m_mutex);
+	m_bStopMinimax = false;
+
+	cout << "Waiting Time: " << waitTimer.GetTime() << endl;
+
 #ifdef DEBUG_OUTPUT
 	Timer timer;
 	timer.Start();
@@ -51,13 +80,17 @@ bool AI::run()
 	m_board.Update(TurnsToStalemate(), moves, pieces);
 
 	// Find the best move using Minimax
-	BoardMove bestMove;
-	MiniMax(bestMove);
+	MiniMax(playerID(), false, m_bestMove);
 
 	// Get the piece to move and move the piece
-	BoardPiece* pPiece = m_board.GetPiece(bestMove.from);
+	BoardPiece* pPiece = m_board.GetPiece(m_bestMove.from);
 	assert(pPiece != nullptr);
-	pPiece->piece.move(bestMove.to.x, bestMove.to.y, bestMove.promotion);
+	pPiece->piece.move(m_bestMove.to.x, m_bestMove.to.y, m_bestMove.promotion);
+
+	std::memset(m_history.data(),0,sizeof(m_history));
+	m_transpositionTable.clear();
+
+	m_cv.notify_one();
 
 #ifdef DEBUG_OUTPUT
 	m_totalTime += timer.GetTime();
@@ -76,9 +109,16 @@ bool AI::run()
 //This function is run once, after your last turn.
 void AI::end()
 {
+	if(m_ponderThread.joinable())
+	{
+		m_bExit = true;
+		m_cv.notify_one();
+
+		m_ponderThread.join();
+	}
 }
 
-void AI::MiniMax(BoardMove& moveOut)
+void AI::MiniMax(int playerID, bool bPonder, BoardMove& moveOut)
 {
 	unsigned int d = 1;
 	bool bEnableTimer = false;
@@ -88,11 +128,14 @@ void AI::MiniMax(BoardMove& moveOut)
 
 	m_bInCheckmate = false;
 
-	std::memset(m_history.data(),0,sizeof(m_history));
-
-	while((!bEnableTimer || (m_minimaxTimer.GetTime() < GetTimePerMove())) && (d <= m_depth) && (!m_bInCheckmate || (d != 2)))
+	while((d <= m_depth) && (!m_bInCheckmate || (d != 2)))
 	{
-		bool bFoundAtDepth = MiniMax(d, playerID(), bEnableTimer, moveOut);
+		if(!bPonder && bEnableTimer && (m_minimaxTimer.GetTime() >= GetTimePerMove()))
+		{
+			break;
+		}
+
+		bool bFoundAtDepth = MiniMax(d, bPonder, playerID, bEnableTimer, moveOut);
 		if(bFoundAtDepth)
 		{
 #ifdef DEBUG_OUTPUT
@@ -112,7 +155,7 @@ void AI::MiniMax(BoardMove& moveOut)
 	}
 }
 
-bool AI::MiniMax(int depth, int playerID, bool bEnableTimer, BoardMove& moveOut)
+bool AI::MiniMax(int depth, bool bPonder, int playerID, bool bEnableTimer, BoardMove& moveOut)
 {
 	bool bFoundMove = false;
 	BoardMove bestMove;
@@ -127,7 +170,7 @@ bool AI::MiniMax(int depth, int playerID, bool bEnableTimer, BoardMove& moveOut)
 	{
 		ApplyMove theMove(currentMove, &m_board);
 
-		int val = -MiniMax(depth - 1, playerID, !playerID, -beta, -alpha);
+		int val = -MiniMax(depth - 1, bPonder, playerID, !playerID, -beta, -alpha);
 
 		// If the new move is better than the last
 		if(val > alpha)
@@ -141,7 +184,7 @@ bool AI::MiniMax(int depth, int playerID, bool bEnableTimer, BoardMove& moveOut)
 #endif
 		}
 
-		if(bEnableTimer)
+		if(bEnableTimer && !bPonder)
 		{
 			// If we have ran out of time
 			if((m_minimaxTimer.GetTime()) >= GetTimePerMove())
@@ -150,6 +193,9 @@ bool AI::MiniMax(int depth, int playerID, bool bEnableTimer, BoardMove& moveOut)
 				break;
 			}
 		}
+
+		if(bPonder && m_bStopMinimax)
+			break;
 	}
 
 	if(bFoundMove)
@@ -162,8 +208,31 @@ bool AI::MiniMax(int depth, int playerID, bool bEnableTimer, BoardMove& moveOut)
 
 }
 
-int AI::MiniMax(int depth, int playerID, int playerIDToMove, int alpha, int beta)
+int AI::MiniMax(int depth, bool bPonder, int playerID, int playerIDToMove, int alpha, int beta)
 {
+	if(bPonder && m_bStopMinimax)
+		return 0;
+
+	int alphaOrig = alpha;
+
+	auto iter = this->m_transpositionTable.find(m_board.GetState());
+	if(iter != m_transpositionTable.end())
+	{
+		const TranspositionTableEntry& ttEntry = iter->second;
+		if(ttEntry.depth >= depth)
+		{
+			if(ttEntry.flag == TranspositionTableFlag::EXACT)
+				return ttEntry.value;
+			if(ttEntry.flag == TranspositionTableFlag::LOWERBOUND)
+				alpha = std::max(alpha, ttEntry.value);
+			else if(ttEntry.flag == TranspositionTableFlag::UPPERBOUND)
+				beta = std::min(beta, ttEntry.value);
+
+			if(alpha >= beta)
+				return ttEntry.value;
+		}
+	}
+
 	// If a checkmate has been found, return a large number
 	if(m_board.IsInCheckmate(playerIDToMove))
 	{
@@ -184,9 +253,9 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int alpha, int beta
 		// Initiate quiescent search
 
 		// Get the heuristic value of the node
-		int stand_pat = m_board.GetWorth(playerIDToMove, ChessHeuristic());
+		return m_board.GetWorth(playerIDToMove, ChessHeuristic());
 
-		if( (stand_pat >= beta) || (depth <= -1))
+		/*if( (stand_pat >= beta) || (depth <= -1))
 		{
 			return stand_pat;
 		}
@@ -195,7 +264,7 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int alpha, int beta
 		if(stand_pat > alpha)
 		{
 			alpha = stand_pat;
-		}
+		}*/
 	}
 
 	// Build a priority queue of the frontier nodes
@@ -203,6 +272,10 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int alpha, int beta
 
 	BoardMove bestMove;
 	bool bFoundBestMove = false;
+
+	int bestValue = std::numeric_limits<int>::min();
+
+	//bool bFoundMove = false;
 
 	for(const BoardMove& currentMove : frontier)
 	{
@@ -215,21 +288,24 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int alpha, int beta
 			}
 		}
 
+		//bFoundMove = true;
+
 		// Apply the move in the queue with the higest priority
 		ApplyMove theMove(currentMove, &m_board);
-		int score = -MiniMax(depth - 1, playerID, !playerIDToMove, -beta, -alpha);
-
-		if(score >= beta)
-		{
-			m_history[playerIDToMove][GetHistoryTableIndex(currentMove.from)][GetHistoryTableIndex(currentMove.to)] += (depth * depth) + 1;
-			return beta;
-		}
-
-		if(score > alpha)
+		int score = -MiniMax(depth - 1, bPonder, playerID, !playerIDToMove, -beta, -alpha);
+		if(score > bestValue)
 		{
 			bFoundBestMove = true;
-			alpha = score;
+			bestValue = score;
 			bestMove = currentMove;
+		}
+
+		alpha = std::max(alpha, score);
+
+		if(alpha >= beta)
+		{
+			m_history[playerIDToMove][GetHistoryTableIndex(currentMove.from)][GetHistoryTableIndex(currentMove.to)] += (depth * depth) + 1;
+			break;
 		}
 	}
 
@@ -238,13 +314,44 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int alpha, int beta
 		m_history[playerIDToMove][GetHistoryTableIndex(bestMove.from)][GetHistoryTableIndex(bestMove.to)] += (depth * depth) + 1;
 	}
 
-	return alpha;
+
+	TranspositionTableEntry ttEntry;
+	ttEntry.value = bestValue;
+
+	if(bestValue <= alphaOrig)
+	{
+		ttEntry.flag = TranspositionTableFlag::UPPERBOUND;
+	}
+	else if(bestValue >= beta)
+	{
+		ttEntry.flag = TranspositionTableFlag::LOWERBOUND;
+	}
+	else
+	{
+		ttEntry.flag = TranspositionTableFlag::EXACT;
+	}
+	ttEntry.depth = depth;
+
+	if(iter != m_transpositionTable.end())
+	{
+		if(ttEntry.depth > iter->second.depth)
+		{
+			iter->second = ttEntry;
+		}
+	}
+	else
+	{
+		m_transpositionTable[m_board.GetState()] = ttEntry;
+	}
+
+
+	return bestValue;
 }
 
 AI::FRONTIER_TYPE AI::MoveOrdering(int playerIDToMove)
 {
 	std::vector<BoardMove> moves = m_board.GetMoves(playerIDToMove);
-	std::shuffle(moves.begin(), moves.end(), m_randEngine);
+	//std::shuffle(moves.begin(), moves.end(), m_randEngine);
 
 	std::sort(moves.begin(), moves.end(), [&](const BoardMove& a, const BoardMove& b) -> bool
 	{
@@ -257,7 +364,7 @@ AI::FRONTIER_TYPE AI::MoveOrdering(int playerIDToMove)
 
 std::uint64_t AI::GetTimePerMove()
 {
-	std::uint64_t time = (std::uint64_t)players[playerID()].time() / 50 * 1000000000;
+	std::uint64_t time = (std::uint64_t)players[playerID()].time() / 40 * 1000000000;
 
 	// If the game is almost going to time out,
 	// do not search as deep
