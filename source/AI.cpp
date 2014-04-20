@@ -164,8 +164,6 @@ bool AI::MiniMax(int depth, int playerID, bool bEnableTimer, BoardMove& moveOut)
 
 int AI::MiniMax(int depth, int playerID, int playerIDToMove, int alpha, int beta)
 {
-	// playerIDToMove made a move
-
 	// If a checkmate has been found, return a large number
 	if(m_board.IsInCheckmate(playerIDToMove))
 	{
@@ -180,15 +178,20 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int alpha, int beta
 	if(m_board.IsInStalemate(playerIDToMove))
 		return 0;
 
-	// If this is a leaf node, return the heuristic value of the state for max
+	// If this is a leaf node
 	if(depth <= 0)
 	{
+		// Initiate quiescent search
+
+		// Get the heuristic value of the node
 		int stand_pat = m_board.GetWorth(playerIDToMove, ChessHeuristic());
 
 		if( (stand_pat >= beta) || (depth <= -1))
 		{
 			return stand_pat;
 		}
+
+		// See if we can do better than alpha
 		if(stand_pat > alpha)
 		{
 			alpha = stand_pat;
