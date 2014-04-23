@@ -44,7 +44,7 @@ private:
   // Finds the best move from minimax with alpha beta pruning, Quiescence Search, and History Table
   void MiniMax(BoardMove& moveOut);
   bool MiniMax(int depth, int playerID, bool bEnableTime, BoardMove& moveOut);
-  int MiniMax(int depth, int playerID, int playerIDToMove, int a, int b);
+  int MiniMax(int depth, int playerID, int playerIDToMove, int a, int b, bool bEnableTimer);
 
   // Returns the frontier nodes for the current player to move sorted from high to low based on the history table
   FRONTIER_TYPE MoveOrdering(int playerIDToMove);

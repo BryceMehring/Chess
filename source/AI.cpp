@@ -127,7 +127,7 @@ bool AI::MiniMax(int depth, int playerID, bool bEnableTimer, BoardMove& moveOut)
 	{
 		ApplyMove theMove(currentMove, &m_board);
 
-		int val = MiniMax(depth - 1, playerID, !playerID, alpha, beta);
+		int val = MiniMax(depth - 1, playerID, !playerID, alpha, beta, bEnableTimer);
 
 		// If the new move is better than the last
 		if(val > alpha)
@@ -159,14 +159,16 @@ bool AI::MiniMax(int depth, int playerID, bool bEnableTimer, BoardMove& moveOut)
 	}
 
 	return bFoundMove;
-
 }
 
-int AI::MiniMax(int depth, int playerID, int playerIDToMove, int alpha, int beta)
+int AI::MiniMax(int depth, int playerID, int playerIDToMove, int alpha, int beta, bool bEnableTimer)
 {
-	// If we have ran out of time
-	if((m_minimaxTimer.GetTime()) >= GetTimePerMove())
-		return 0;
+	if(bEnableTimer)
+	{
+		// If we have ran out of time
+		if((m_minimaxTimer.GetTime()) >= GetTimePerMove())
+			return 0;
+	}
 
 	// If a checkmate has been found, return a large number
 	if(m_board.IsInCheckmate(!playerID))
@@ -236,7 +238,7 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int alpha, int beta
 
 		// Apply the move in the queue with the higest priority
 		ApplyMove theMove(currentMove, &m_board);
-		int score = MiniMax(depth - 1, playerID, !playerIDToMove, alpha, beta);
+		int score = MiniMax(depth - 1, playerID, !playerIDToMove, alpha, beta, bEnableTimer);
 
 		if(playerID == playerIDToMove)
 		{
