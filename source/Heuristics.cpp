@@ -138,7 +138,7 @@ int ChessHeuristic::GetMaterialValue(const Board& board, const ivec2& pos, int t
 			value += m_queenMoveTable[rank][pos.x - 1];
 			break;
 		case 'K':
-			if(board.GetNumPieces() > 16)
+			if(board.GetNumPieces() > 8)
 			{
 				value += m_kingMiddleGameTable[rank][pos.x - 1];
 			}
