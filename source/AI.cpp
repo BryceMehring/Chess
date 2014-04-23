@@ -163,12 +163,14 @@ bool AI::MiniMax(int depth, int playerID, bool bEnableTimer, BoardMove& moveOut)
 
 int AI::MiniMax(int depth, int playerID, int playerIDToMove, int alpha, int beta, bool bEnableTimer)
 {
+#ifdef STRICT_DEADLINE
 	if(bEnableTimer)
 	{
 		// If we have ran out of time
 		if((m_minimaxTimer.GetTime()) >= GetTimePerMove())
 			return 0;
 	}
+#endif
 
 	// If a checkmate has been found, return a large number
 	if(m_board.IsInCheckmate(!playerID))
@@ -245,14 +247,18 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int alpha, int beta
 			if(score >= beta)
 			{
 				m_history[playerIDToMove][GetHistoryTableIndex(currentMove.from)][GetHistoryTableIndex(currentMove.to)] += (depth * depth) + 1;
-				return score;
-			}
-
-			if(score > alpha)
-			{
-				bFoundBestMove = true;
 				alpha = score;
-				bestMove = currentMove;
+				bFoundBestMove = false;
+				break;
+			}
+			else
+			{
+				if(score > alpha)
+				{
+					bFoundBestMove = true;
+					alpha = score;
+					bestMove = currentMove;
+				}
 			}
 		}
 		else
@@ -260,14 +266,18 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int alpha, int beta
 			if(score <= alpha)
 			{
 				m_history[playerIDToMove][GetHistoryTableIndex(currentMove.from)][GetHistoryTableIndex(currentMove.to)] += (depth * depth) + 1;
-				return score;
-			}
-
-			if(score < beta)
-			{
-				bFoundBestMove = true;
 				beta = score;
-				bestMove = currentMove;
+				bFoundBestMove = false;
+				break;
+			}
+			else
+			{
+				if(score < beta)
+				{
+					bFoundBestMove = true;
+					beta = score;
+					bestMove = currentMove;
+				}
 			}
 		}
 	}

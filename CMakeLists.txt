@@ -12,9 +12,14 @@ file(GLOB_RECURSE CHESS_SOURCE
 	)
 
 option(DEBUG_OUTPUT "Debug Output" ON)
+option(STRICT_DEADLINE "Enable a more forceful deadline" OFF)
 
 if(DEBUG_OUTPUT)
 	add_definitions(-DDEBUG_OUTPUT)
+endif()
+
+if(STRICT_DEADLINE)
+	add_definitions(-DSTRICT_DEADLINE)
 endif()
 
 add_executable(client ${CHESS_SOURCE})
