@@ -6,6 +6,11 @@
 using std::cout;
 using std::endl;
 
+bool operator ==(const BoardPiece& a, const BoardPiece& b)
+{
+	return (a.type == b.type) && (a.hasMoved == b.hasMoved) && (a.owner == b.owner);
+}
+
 ApplyMove::ApplyMove(const BoardMove& move, Board* pBoard) : m_move(move), m_pBoard(pBoard)
 {
 	// todo: clean up this code
@@ -179,6 +184,11 @@ void ApplyMove::ApplyCastleMove(bool bApply)
 	std::swap(m_pBoard->m_board[rookFile - 1][m_move.from.y - 1], m_pBoard->m_board[rookToFile - 1][m_move.from.y - 1]);
 }
 
+void BoardHash::SetBoard(const Board* pBoard)
+{
+	s_pBoard = pBoard;
+}
+
 std::size_t BoardHash::operator()(const std::vector<std::vector<int>>& key) const
 {
 	std::size_t h = 5381;
@@ -186,26 +196,58 @@ std::size_t BoardHash::operator()(const std::vector<std::vector<int>>& key) cons
 	{
 		for(int i : iter)
 		{
-			h ^= i + 0x9e3779b9 + (h<<6) + (h>>2);
+			int c = '0';
+			const BoardPiece* pPiece = s_pBoard->GetPiece(i);
+			if(pPiece != nullptr)
+			{
+				c = pPiece->type;
+			}
+			
+			h ^= c + 0x9e3779b9 + (h<<6) + (h>>2);
 		}
 	}
 
 	return h;
 }
 
+const Board* BoardHash::s_pBoard = nullptr;
+
+void BoardEqual::SetBoard(const Board* pBoard)
+{
+	s_pBoard = pBoard;
+}
+
+bool BoardEqual::operator()(const std::vector<std::vector<int>>& a, const std::vector<std::vector<int>>& b) const
+{
+	return std::equal(a.begin(), a.end(), b.begin(), [this](const std::vector<int>& subA, const std::vector<int>& subB) -> bool
+	{
+		return std::equal(subA.begin(), subA.end(), subB.begin(), [this](int idA, int idB) -> bool
+		{
+			const BoardPiece* pPieceA = s_pBoard->GetPiece(idA);
+			if(pPieceA == nullptr)
+				return false;
+			
+			const BoardPiece* pPieceB = s_pBoard->GetPiece(idB);
+			if(pPieceB == nullptr)
+				return false;
+			
+			return (*pPieceA) == (*pPieceB);
+		});
+	});
+}
+
+const Board* BoardEqual::s_pBoard = nullptr;
+
 Board::Board() : m_turnsToStalemate(0), m_cacheHit(0), m_cacheTotal(0)
 {
+	BoardHash::SetBoard(this);
+	BoardEqual::SetBoard(this);
+	
 	m_board.resize(8);
 
 	for(auto& iter : m_board)
 	{
 		iter.resize(8);
-	}
-
-	// Give enough buckets to the move cache
-	for(auto& iter : m_validMoveCache)
-	{
-		iter.rehash(10000);
 	}
 }
 
@@ -261,19 +303,9 @@ void Board::Update(int turnsToStalemate, const std::vector<Move>& moves, const s
 	m_turnsToStalemate = turnsToStalemate;
 }
 
-const std::vector<BoardMove>& Board::GetMoves(int playerID)
+std::vector<BoardMove> Board::GetMoves(int playerID)
 {
-	m_cacheTotal++;
-
-	auto iter = m_validMoveCache[playerID].find(m_board);
-	if(iter != m_validMoveCache[playerID].end())
-	{
-		m_cacheHit++;
-		return iter->second;
-	}
-
-	auto iterPair = m_validMoveCache[playerID].insert(std::make_pair(m_board, GetMoves(playerID, true)));
-	return iterPair.first->second;
+	return GetMoves(playerID, true);
 }
 
 int Board::GetWorth(int playerID, const std::function<int(const Board& board, const BoardPiece&)>& heuristic)
@@ -304,7 +336,17 @@ const BoardPiece* Board::GetPiece(const ivec2& pos) const
 {
 	assert(IsOnBoard(pos));
 	int id = m_board[pos.x - 1][pos.y - 1];
+	
+	return GetPiece(id);
+}
 
+BoardPiece* Board::GetPiece(int id)
+{
+	return const_cast<BoardPiece*>(static_cast<const Board*>(this)->GetPiece(id));
+}
+
+const BoardPiece* Board::GetPiece(int id) const
+{
 	auto iter = m_pieces.find(id);
 	return (iter == m_pieces.end()) ? nullptr : &iter->second;
 }
@@ -350,31 +392,6 @@ bool Board::IsInStalemate(int playerID)
 unsigned int Board::GetNumPieces() const
 {
 	return (m_piecesCount[0] + m_piecesCount[1]);
-}
-
-float Board::GetLoadFactor() const
-{
-	unsigned int nbuckets = m_validMoveCache[0].bucket_count();
-	unsigned int collisions = 0;
-	for(unsigned int i = 0; i < nbuckets; ++i)
-	{
-		if(m_validMoveCache[0].bucket_size(i) > 1)
-		{
-			collisions += (m_validMoveCache[0].bucket_size(i) - 1);
-		}
-	}
-
-	return collisions / (float)m_validMoveCache[0].size();
-}
-
-float Board::GetMoveCacheHitRatio() const
-{
-	return m_cacheHit / (float)m_cacheTotal;
-}
-
-unsigned int Board::GetHashTableSize() const
-{
-	return m_validMoveCache[0].size();
 }
 
 std::vector<BoardMove> Board::GetMoves(int playerID, bool bCheck)
@@ -776,12 +793,6 @@ void Board::Clear()
 		{
 			rankIter = 0;
 		}
-	}
-
-	// Clear the cache
-	for(auto& iter : m_validMoveCache)
-	{
-		iter.clear();
 	}
 
 	// Clear the list of pieces

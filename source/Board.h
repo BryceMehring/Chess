@@ -20,6 +20,8 @@ struct BoardPiece
 	int type;
 };
 
+bool operator ==(const BoardPiece& a, const BoardPiece& b);
+
 // Moves, then unmoves a piece move upon destruction
 class ApplyMove
 {
@@ -45,12 +47,34 @@ private:
 	ivec2 m_oldKingPos;
 };
 
+class Board;
+
 class BoardHash
 {
 public:
+	
+	static void SetBoard(const Board* pBoard);
 
 	std::size_t operator()(const std::vector<std::vector<int>>& key) const;
+	
+private:
+	
+	static const Board* s_pBoard;
 
+};
+
+class BoardEqual
+{
+public:
+	
+	static void SetBoard(const Board* pBoard);
+	
+	bool operator()(const std::vector<std::vector<int>>& a, const std::vector<std::vector<int>>& b) const;
+	
+private:
+	
+	static const Board* s_pBoard;
+	
 };
 
 // Defines a chess board which manages generating valid action states
@@ -67,7 +91,7 @@ public:
 	void Update(int turnsToStalemate, const std::vector<Move>& moves, const std::vector<Piece>& pieces);
 
 	// Returns all valid moves for the specifed player
-	const std::vector<BoardMove>& GetMoves(int playerID);
+	std::vector<BoardMove> GetMoves(int playerID);
 
 	// Returns the value of the game state for the player
 	int GetWorth(int playerID, const std::function<int(const Board&, const BoardPiece&)>& heuristic);
@@ -76,6 +100,9 @@ public:
 	// If there is not a piece at pos, nullptr is returned
 	BoardPiece* GetPiece(const ivec2& pos);
 	const BoardPiece* GetPiece(const ivec2& pos) const;
+	
+	BoardPiece* GetPiece(int id);
+	const BoardPiece* GetPiece(int id) const;
 
 	const std::vector<std::vector<int>>& GetState() const { return m_board; }
 
@@ -99,15 +126,6 @@ public:
 
 	// Returns the number of pieces on the board
 	unsigned int GetNumPieces() const;
-
-	// Returns the percentage of collisions of elements in the move cache
-	float GetLoadFactor() const;
-
-	// Returns the hit ratio into the move cache
-	float GetMoveCacheHitRatio() const;
-
-	// Returns the number of elements in the move cache
-	unsigned int GetHashTableSize() const;
 
 private:
 
@@ -154,8 +172,6 @@ private:
 
 	std::vector<std::vector<int>> m_board;
 	std::unordered_map<int,BoardPiece> m_pieces;
-
-	std::unordered_map<std::vector<std::vector<int>>, std::vector<BoardMove>, BoardHash> m_validMoveCache[2];
 
 	std::deque<BoardMove> m_moveHistory;
 

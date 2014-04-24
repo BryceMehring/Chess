@@ -95,10 +95,6 @@ bool AI::run()
 	m_totalTime += timer.GetTime();
 	cout << "Average Time: " << m_totalTime / m_count << endl;
 	cout << "Server time: " << 900 - players[playerID()].time() << endl;
-	cout << "Move Cache Collision ratio: " << m_board.GetLoadFactor() << endl;
-	cout << "Move Cache Hit ratio: " << m_board.GetMoveCacheHitRatio() << endl;
-	cout << "Hash table size: " << m_board.GetHashTableSize() << endl;
-
 	m_count++;
 #endif
 
