@@ -263,7 +263,7 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int alpha, int beta
 		// Get the heuristic value of the node
 		int stand_pat = m_board.GetWorth(playerID, ChessHeuristic());
 		
-		if(depth <= -1)
+		if(depth <= -2)
 			return stand_pat;					
 
 		if(playerID == playerIDToMove)
