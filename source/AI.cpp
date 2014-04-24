@@ -18,7 +18,7 @@ static unsigned int GetHistoryTableIndex(const ivec2& pos)
 }
 
 AI::AI(Connection* conn, unsigned int depth) : BaseAI(conn), m_totalTime(0), m_count(1),
-	m_depth(depth), m_bInCheckmate(false), m_bExit(false), m_bStopMinimax(false), m_randEngine(std::chrono::system_clock::now().time_since_epoch().count()) {}
+	m_depth(depth), m_bInCheckmate(false), m_bStopMinimax(false), m_bExit(false), m_randEngine(std::chrono::system_clock::now().time_since_epoch().count()) {}
 
 const char* AI::username()
 {
@@ -35,12 +35,9 @@ void AI::init()
 {
 	auto ponderMethod = [this]()
 	{
-		std::unique_lock<std::mutex> lck(m_mutex);
-		while(true)
+		while(!m_bExit)
 		{
-			if(m_bExit)
-				break;
-			
+			std::unique_lock<std::mutex> lck(m_mutex);
 			m_cv.wait(lck);
 
 			BoardMove move;
@@ -86,7 +83,7 @@ bool AI::run()
 	pPiece->piece.move(m_bestMove.to.x, m_bestMove.to.y, m_bestMove.promotion);
 
 	ClearHistory();
-
+	
 	m_cv.notify_one();
 
 #ifdef DEBUG_OUTPUT
@@ -104,11 +101,14 @@ void AI::end()
 {
 	if(m_ponderThread.joinable())
 	{
+		std::unique_lock<std::mutex> lck(m_mutex);
 		m_bStopMinimax = m_bExit = true;
+		
 		m_cv.notify_one();
-
-		m_ponderThread.join();
 	}
+	
+	if(m_ponderThread.joinable())
+		m_ponderThread.join();
 }
 
 void AI::MiniMax(int playerID, bool bPonder, BoardMove& moveOut)

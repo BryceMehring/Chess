@@ -72,10 +72,9 @@ private:
   std::thread m_ponderThread;
   std::mutex m_mutex;
   std::condition_variable m_cv;
-  std::atomic_bool m_bExit;
   std::atomic_bool m_bStopMinimax;
+  std::atomic_bool m_bExit;
   BoardMove m_bestMove;
-  bool m_bEnablePondering;
 
   std::unordered_map<std::vector<std::vector<int>>, TranspositionTableEntry, BoardHash> m_transpositionTable;
 
