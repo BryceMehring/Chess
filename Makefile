@@ -3,8 +3,8 @@ headers = $(wildcard source/*.h)
 objects = $(sources:%.cpp=%.o)
 deps = $(sources:%.cpp=%.d)
 CFLAGS += -O3 -pedantic -Wall
-CXXFLAGS += -std=c++0x -O3 -pedantic -Wall -DDEBUG_OUTPUT
-
+CXXFLAGS += -pthread -std=c++0x -O3 -pedantic -Wall -DDEBUG_OUTPUT
+LDFLAGS += -pthread
 override CPPFLAGS += -Isource/sexp
 
 all: client
