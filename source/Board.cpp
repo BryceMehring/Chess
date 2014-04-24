@@ -223,12 +223,13 @@ bool BoardEqual::operator()(const std::vector<std::vector<int>>& a, const std::v
 	{
 		return std::equal(subA.begin(), subA.end(), subB.begin(), [this](int idA, int idB) -> bool
 		{
-			const BoardPiece* pPieceA = s_pBoard->GetPiece(idA);
-			if(pPieceA == nullptr)
-				return false;
+			if((idA == 0) && (idB == 0))
+				return true;
 			
+			const BoardPiece* pPieceA = s_pBoard->GetPiece(idA);
 			const BoardPiece* pPieceB = s_pBoard->GetPiece(idB);
-			if(pPieceB == nullptr)
+			
+			if(pPieceA == nullptr || pPieceB == nullptr)
 				return false;
 			
 			return (*pPieceA) == (*pPieceB);
