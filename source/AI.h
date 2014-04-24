@@ -55,6 +55,8 @@ private:
 
   // Returns the amount of time that the AI has per turn
   std::uint64_t GetTimePerMove();
+  
+  void ClearHistory();
 
   // Draws the chess board to standard output
   void DrawBoard() const;

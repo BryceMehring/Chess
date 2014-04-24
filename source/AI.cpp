@@ -38,10 +38,10 @@ void AI::init()
 		std::unique_lock<std::mutex> lck(m_mutex);
 		while(true)
 		{
-			m_cv.wait(lck);
-
 			if(m_bExit)
 				break;
+			
+			m_cv.wait(lck);
 
 			BoardMove move;
 
@@ -57,7 +57,6 @@ void AI::init()
 //Return true to end your turn, return false to ask the server for updated information.
 bool AI::run()
 {
-
 	Timer waitTimer;
 	waitTimer.Start();
 
@@ -86,8 +85,7 @@ bool AI::run()
 	assert(pPiece != nullptr);
 	pPiece->piece.move(m_bestMove.to.x, m_bestMove.to.y, m_bestMove.promotion);
 
-	std::memset(m_history.data(),0,sizeof(m_history));
-	//m_transpositionTable.clear();
+	ClearHistory();
 
 	m_cv.notify_one();
 
@@ -106,7 +104,7 @@ void AI::end()
 {
 	if(m_ponderThread.joinable())
 	{
-		m_bExit = true;
+		m_bStopMinimax = m_bExit = true;
 		m_cv.notify_one();
 
 		m_ponderThread.join();
@@ -130,7 +128,7 @@ void AI::MiniMax(int playerID, bool bPonder, BoardMove& moveOut)
 			break;
 		}
 		
-		if(bPonder && m_bStopMinimax)
+		if(bPonder && (m_bStopMinimax || m_bExit))
 			break;
 
 		bool bFoundAtDepth = MiniMax(d, playerID, bPonder, bEnableTimer, moveOut);
@@ -167,7 +165,7 @@ bool AI::MiniMax(int depth, int playerID, bool bPonder, bool bEnableTimer, Board
 
 	for(const BoardMove& currentMove : frontier)
 	{
-		if(bPonder && m_bStopMinimax)
+		if(bPonder && (m_bStopMinimax || m_bExit))
 			break;
 		
 		ApplyMove theMove(currentMove, &m_board);
@@ -208,7 +206,7 @@ bool AI::MiniMax(int depth, int playerID, bool bPonder, bool bEnableTimer, Board
 
 int AI::MiniMax(int depth, int playerID, int playerIDToMove, int alpha, int beta, bool bPonder, bool bEnableTimer)
 {
-	if(bPonder && m_bStopMinimax)
+	if(bPonder && (m_bStopMinimax || m_bExit))
 		return 0;
 	
 #ifdef STRICT_DEADLINE
@@ -408,6 +406,11 @@ std::uint64_t AI::GetTimePerMove()
 	}
 
 	return time;
+}
+
+void AI::ClearHistory()
+{
+	std::memset(m_history.data(),0,sizeof(m_history));
 }
 
 void AI::DrawBoard() const
