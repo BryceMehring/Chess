@@ -35,10 +35,13 @@ void AI::init()
 {
 	auto ponderMethod = [this]()
 	{
-		while(!m_bExit)
+		while(true)
 		{
 			std::unique_lock<std::mutex> lck(m_mutex);
 			m_cv.wait(lck);
+			
+			if(m_bExit)
+				break;
 
 			BoardMove move;
 
@@ -101,8 +104,8 @@ void AI::end()
 {
 	if(m_ponderThread.joinable())
 	{
+		m_bExit = true;
 		std::unique_lock<std::mutex> lck(m_mutex);
-		m_bStopMinimax = m_bExit = true;
 		
 		m_cv.notify_one();
 	}
