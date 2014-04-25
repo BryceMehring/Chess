@@ -722,7 +722,7 @@ bool Board::IsNotEnoughPiecesStalemate() const
 
 	// king against king and bishop;
 	// king against king and knight;
-	if(((m_knightCounter[1] == 1) ^ (m_bishopCounter[1] == 1)) ||
+	if(((m_knightCounter[0] == 1) ^ (m_bishopCounter[0] == 1)) ||
 	   ((m_knightCounter[1] == 1) ^ (m_bishopCounter[1] == 1)))
 	{
 		cout << "Stalemate: king against king and (bishop or knight)" << endl;
