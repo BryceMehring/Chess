@@ -41,17 +41,43 @@ ApplyMove::ApplyMove(const BoardMove& move, Board* pBoard) : m_move(move), m_pBo
 		m_oldTurnsToStalemate = m_pBoard->m_turnsToStalemate;
 		m_pBoard->m_turnsToStalemate = 100;
 	}
-
-	// Keep track of the kings
-	if(pFrom->type == 'K')
+	
+	if(m_move.capturedType != 0)
+	{
+		m_pBoard->m_piecesCount[!pFrom->owner]--;
+		
+		// Update the number of knights and bishops
+		if(m_move.capturedType == 'N')
+		{
+			m_pBoard->m_knightCounter[!pFrom->owner]--;
+		}
+		else if(m_move.capturedType == 'B')
+		{
+			m_pBoard->m_bishopCounter[!pFrom->owner]--;
+		}
+	}
+	
+	if(pFrom->type == 'K') // Keep track of the kings
 	{
 		m_oldKingPos = m_pBoard->m_kingPos[pFrom->owner];
 		m_pBoard->m_kingPos[pFrom->owner] = m_move.to;
 	}
+	
 	// Promotion logic
 	else if(m_move.specialMove == SpecialMove::Promotion)
 	{
 		pFrom->type = m_move.promotion;
+		
+		// Update the number of knights and bishops upon promotion
+		if(m_move.promotion == 'N')
+		{
+			m_pBoard->m_knightCounter[!pFrom->owner]++;
+		}
+		else if(m_move.promotion == 'B')
+		{
+			m_pBoard->m_bishopCounter[!pFrom->owner]++;
+			m_pBoard->m_bishopPos[!pFrom->owner] = m_move.to;
+		}
 	}
 	else if(m_move.specialMove == SpecialMove::Castle)
 	{
@@ -76,6 +102,16 @@ ApplyMove::~ApplyMove()
 	else if(m_move.specialMove == SpecialMove::Promotion)
 	{
 		pFrom->type = pFrom->piece.type();
+		
+		// Update the number of knights and bishops upon promotion
+		if(m_move.promotion == 'N')
+		{
+			m_pBoard->m_knightCounter[!pFrom->owner]--;
+		}
+		else if(m_move.promotion == 'B')
+		{
+			m_pBoard->m_bishopCounter[!pFrom->owner]--;
+		}
 	}
 	else if(m_move.specialMove == SpecialMove::Castle)
 	{
@@ -83,13 +119,28 @@ ApplyMove::~ApplyMove()
 	}
 
 	// Turns left for stalemate logic
-	if(m_move.capturedType == 0 && pFrom->type != 'P')
+	if((m_move.capturedType == 0) && (pFrom->type != 'P'))
 	{
 		m_pBoard->m_turnsToStalemate++;
 	}
 	else
 	{
 		m_pBoard->m_turnsToStalemate = m_oldTurnsToStalemate;
+	}
+	
+	if(m_move.capturedType != 0)
+	{
+		m_pBoard->m_piecesCount[!pFrom->owner]++;
+		
+		// Update the number of knights and bishops
+		if(m_move.capturedType == 'N')
+		{
+			m_pBoard->m_knightCounter[!pFrom->owner]++;
+		}
+		else if(m_move.capturedType == 'B')
+		{
+			m_pBoard->m_bishopCounter[!pFrom->owner]++;
+		}
 	}
 
 	m_pBoard->m_board[m_move.from.x - 1][m_move.from.y - 1] = m_oldIndex;
@@ -164,13 +215,25 @@ void Board::Update(int turnsToStalemate, const std::vector<Move>& moves, const s
 	Clear();
 
 	// Fill new board with pieces
-	for(unsigned int i = 0; i < pieces.size(); ++i)
+	for(const Piece& p : pieces)
 	{
-		const Piece& p = pieces[i];
-
-		if(p.type() == 'K')
+		m_piecesCount[p.owner()]++;
+		
+		// Cache locations and count of pieces on the board
+		switch(p.type())
 		{
-			m_kingPos[p.owner()] = {p.file(), p.rank()};
+			case 'N':
+				m_knightCounter[p.owner()]++;
+				break;
+			case 'B':
+				m_bishopCounter[p.owner()]++;
+				m_bishopPos[p.owner()] = {p.file(), p.rank()};
+				break;
+			case 'K':
+				m_kingPos[p.owner()] = {p.file(), p.rank()};
+				break;
+			default:
+				break;
 		}
 
 		unsigned int index = p.id();
@@ -286,7 +349,7 @@ bool Board::IsInStalemate(int playerID)
 
 unsigned int Board::GetNumPieces() const
 {
-	return m_pieces.size();
+	return (m_piecesCount[0] + m_piecesCount[1]);
 }
 
 float Board::GetLoadFactor() const
@@ -639,67 +702,41 @@ bool Board::IsNoLegalMovesStalemate(int playerID)
 }
 
 bool Board::IsNotEnoughPiecesStalemate() const
-{
-	// todo: cleanup this method
+{	
+	if((m_piecesCount[0] > 2) || (m_piecesCount[1] > 2))
+	{
+		return false;
+	}
 
-	// Test 2:
 	// king against king;
 	// king against king and bishop;
 	// king against king and knight;
 	// king and bishop against king and bishop, with both bishops on squares of the same color
-	int counters[2][2] = {{0}}; // bishop, knight
-	ivec2 bishopPos[2];
-
-	for(auto& iter : m_board)
-	{
-		for(auto& subIter : iter)
-		{
-			auto iter = m_pieces.find(subIter);
-			if(iter != m_pieces.end())
-			{
-				const BoardPiece& piece = iter->second;
-
-				if(piece.type == 'B')
-				{
-					counters[piece.owner][0]++;
-					bishopPos[piece.owner] = {piece.file, piece.rank};
-				}
-				else if(piece.type == 'N')
-				{
-					counters[piece.owner][1]++;
-				}
-				else if(piece.type != 'K')
-				{
-					return false;
-				}
-			}
-		}
-	}
-
-	bool bOnlyKing[2] = {(counters[0][0] == 0 && counters[0][1] == 0), (counters[1][0] == 0 && counters[1][1] == 0)};
-
+	
 	// king against king
-	if(bOnlyKing[0] && bOnlyKing[1])
+	if((m_piecesCount[0] == 1) && (m_piecesCount[1] == 1))
 	{
+		cout << "Stalemate: king against king" << endl;
 		return true;
 	}
 
-	// king against king and bishop
-	if((bOnlyKing[0] && counters[1][1] == 0 && counters[1][0] == 1) ||
-	   (bOnlyKing[1] && counters[0][1] == 0 && counters[0][0] == 1))
+	// king against king and bishop;
+	// king against king and knight;
+	if(((m_knightCounter[1] == 1) ^ (m_bishopCounter[1] == 1)) ||
+	   ((m_knightCounter[1] == 1) ^ (m_bishopCounter[1] == 1)))
+	{
+		cout << "Stalemate: king against king and (bishop or knight)" << endl;
 		return true;
-
-	// king against king and knight
-	if((bOnlyKing[0] && counters[1][1] == 1 && counters[1][0] == 0) ||
-	   (bOnlyKing[1] && counters[0][1] == 1 && counters[0][0] == 0))
-		return true;
+	}
 
 	// king and bishop against king and bishop, with both bishops on squares of the same color
-	if(counters[0][0] == 1 && counters[0][1] == 0 &&
-	   counters[1][0] == 1 && counters[1][1] == 0)
+	if((m_bishopCounter[0] == 1) && (m_bishopCounter[1] == 1))
 	{
-		if((bishopPos[0].x + bishopPos[0].y) % 2 == (bishopPos[1].x + bishopPos[1].y) % 2)
+		if(((m_bishopPos[0].x + m_bishopPos[0].y) % 2) == ((m_bishopPos[1].x + m_bishopPos[1].y) % 2))
+		{
+			cout << "Stalemate: king and bishop against king and bishop, with both bishops on squares of the same color" << endl;
 			return true;
+		}
 	}
 
 	return false;
@@ -717,16 +754,7 @@ bool Board::IsThreeBoardStateStalemate() const
 			return (a.from == b.from && a.to == b.to);
 		};
 
-		bool bEqual = std::equal(m_moveHistory.begin(), m_moveHistory.begin() + 4, m_moveHistory.begin() + 4, equalFunctor);
-
-#ifdef DEBUG_OUTPUT
-		if(bEqual)
-		{
-			cout << "Three board state stalemate detected!" << endl;
-		}
-#endif
-
-		return bEqual;
+		return std::equal(m_moveHistory.begin(), m_moveHistory.begin() + 4, m_moveHistory.begin() + 4, equalFunctor);
 	}
 
 	return false;
@@ -735,6 +763,11 @@ bool Board::IsThreeBoardStateStalemate() const
 void Board::Clear()
 {
 	m_cacheHit = m_cacheTotal = 0;
+	
+	m_piecesCount[0] = m_piecesCount[1] = 0;
+	m_knightCounter[0] = m_knightCounter[1] = 0;
+	m_bishopCounter[0] = m_bishopCounter[1] = 0;
+	m_bishopPos[0] = m_bishopPos[1] = ivec2();
 
 	// Clear the board of pieces
 	for(auto& fileIter : m_board)

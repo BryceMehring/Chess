@@ -161,7 +161,12 @@ private:
 
 	ivec2 m_kingPos[2];
 	BoardMove m_LastMove;
+	
 	int m_turnsToStalemate;
+	int m_piecesCount[2];
+	int m_knightCounter[2];
+	int m_bishopCounter[2];
+	ivec2 m_bishopPos[2];
 
 	int m_cacheHit;
 	int m_cacheTotal;
