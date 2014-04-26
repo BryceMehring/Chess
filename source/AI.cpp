@@ -18,7 +18,8 @@ static unsigned int GetHistoryTableIndex(const ivec2& pos)
 }
 
 AI::AI(Connection* conn, unsigned int depth) : BaseAI(conn), m_totalTime(0), m_count(1),
-	m_depth(depth), m_bInCheckmate(false), m_bStopMinimax(false), m_bExit(false), m_randEngine(std::chrono::system_clock::now().time_since_epoch().count()) {}
+	m_depth(depth), m_bInCheckmate(false), m_bStopMinimax(false), m_bExit(false), m_bFoundOpponentMove(false),
+	m_randEngine(std::chrono::system_clock::now().time_since_epoch().count()) {}
 
 const char* AI::username()
 {
@@ -42,11 +43,26 @@ void AI::init()
 			
 			if(m_bExit)
 				break;
+				
+			BoardMove predictedOpponentMove;
 
-			BoardMove move;
-
-			ApplyMove theMove(m_bestMove, &m_board);
-			MiniMax(!playerID(), true, move);
+			ApplyMove theirMove(m_bestMove, &m_board);
+			MiniMax(!playerID(), true, predictedOpponentMove);
+			
+			if(!m_bStopMinimax)
+			{
+				m_bestMoveMutex.lock();
+				m_opponentBestMove = predictedOpponentMove;
+				m_bFoundOpponentMove = true;
+				m_bestMoveMutex.unlock();
+				
+				// If their last move is the same as the move I have found
+				// Then continue to search
+				// Else signal the thread to exit
+				
+				ApplyMove myMove(predictedOpponentMove, &m_board);
+				MiniMax(playerID(), true, m_bestMove);
+			}
 		}
 	};
 
@@ -57,13 +73,41 @@ void AI::init()
 //Return true to end your turn, return false to ask the server for updated information.
 bool AI::run()
 {
+	bool bRestartMinimax = true;
+
 	Timer waitTimer;
 	waitTimer.Start();
-
-	m_bStopMinimax = true;
-	std::unique_lock<std::mutex> lck(m_mutex);
-	m_bStopMinimax = false;
-
+	
+	// Check to see whether or not the last move that was made matched the predicted move from minimax
+	// Todo: need to use mutexes so that only one thread can access this data
+	if(!moves.empty())
+	{
+		const Move& lastMove = moves[0];
+		
+		std::lock_guard<std::mutex> opponentMoveLck(m_bestMoveMutex);
+		
+		if(m_bFoundOpponentMove && (m_opponentBestMove.from == ivec2{lastMove.fromFile(), lastMove.fromRank()}) && 
+		   (m_opponentBestMove.to == ivec2{lastMove.toFile(), lastMove.toRank()}))
+		{
+			// The ponder thread can finish executing
+			bRestartMinimax = false;
+			std::lock_guard<std::mutex> lck(m_mutex);
+			
+			cout << "Cache Hit" << endl;
+		}
+		else
+		{
+			// Signal the thread to finish 
+			m_bStopMinimax = true;
+			std::lock_guard<std::mutex> lck(m_mutex);
+			m_bStopMinimax = false;
+			
+			cout << "Cache Miss" << endl;
+		}
+		
+		m_bFoundOpponentMove = false;
+	}
+	
 	cout << "Waiting Time: " << waitTimer.GetTime() << endl;
 
 #ifdef DEBUG_OUTPUT
@@ -77,8 +121,11 @@ bool AI::run()
 
 	m_board.Update(TurnsToStalemate(), moves, pieces);
 
-	// Find the best move using Minimax
-	MiniMax(playerID(), false, m_bestMove);
+	if(bRestartMinimax)
+	{
+		// Find the best move using Minimax
+		MiniMax(playerID(), false, m_bestMove);
+	}
 
 	// Get the piece to move and move the piece
 	BoardPiece* pPiece = m_board.GetPiece(m_bestMove.from);
@@ -123,10 +170,12 @@ void AI::MiniMax(int playerID, bool bPonder, BoardMove& moveOut)
 	m_minimaxTimer.Start();
 
 	m_bInCheckmate = false;
+	
+	cout << "Minimax in " << (bPonder ? "Pondering" : "Normal") << endl;
 
 	while((d <= m_depth) && (!m_bInCheckmate || (d != 2)))
 	{
-		if(!bPonder && bEnableTimer && (m_minimaxTimer.GetTime() >= GetTimePerMove()))
+		if(bEnableTimer && (m_minimaxTimer.GetTime() >= GetTimePerMove()))
 		{
 			break;
 		}
@@ -187,7 +236,7 @@ bool AI::MiniMax(int depth, int playerID, bool bPonder, bool bEnableTimer, Board
 #endif
 		}
 
-		if(bEnableTimer && !bPonder)
+		if(bEnableTimer)
 		{
 			// If we have ran out of time
 			if((m_minimaxTimer.GetTime()) >= GetTimePerMove())
@@ -213,7 +262,7 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int alpha, int beta
 		return 0;
 	
 #ifdef STRICT_DEADLINE
-	if(bEnableTimer && !bPonder)
+	if(bEnableTimer)
 	{
 		// If we have ran out of time
 		if((m_minimaxTimer.GetTime()) >= GetTimePerMove())
