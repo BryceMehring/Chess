@@ -10,7 +10,7 @@
 #include <thread>
 #include <atomic>
 #include <mutex>
-#include <condition_variable>
+#include <future>
 
 enum class TranspositionTableFlag
 {
@@ -46,7 +46,7 @@ public:
 private:
 
   // Finds the best move from minimax with alpha beta pruning, Quiescence Search, and History Table
-  void MiniMax(int playerID, bool bPonder, BoardMove& moveOut);
+  bool MiniMax(int playerID, bool bPonder, bool bCutTime, BoardMove& moveOut);
   bool MiniMax(int depth, int playerID, bool bPonder, bool bEnableTime, BoardMove& moveOut);
   int MiniMax(int depth, int playerID, int playerIDToMove, int a, int b, bool bPonder, bool bEnableTimer);
 
@@ -69,15 +69,13 @@ private:
   unsigned int m_depth;
   bool m_bInCheckmate;
 
-  std::thread m_ponderThread;
   std::mutex m_mutex;
   std::mutex m_bestMoveMutex;
-  std::condition_variable m_cv;
   std::atomic_bool m_bStopMinimax;
-  std::atomic_bool m_bExit;
   BoardMove m_bestMove;
   BoardMove m_opponentBestMove;
   bool m_bFoundOpponentMove;
+  std::future<void> m_ponderingFuture;
 
   std::unordered_map<std::vector<std::vector<int>>, TranspositionTableEntry, BoardHash> m_transpositionTable;
 
