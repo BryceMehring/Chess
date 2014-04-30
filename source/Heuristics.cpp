@@ -111,7 +111,21 @@ int ChessHeuristic::GetMaterialValue(const Board& board, const ivec2& pos, int t
 	switch(type)
 	{
 		case 'P':
+		{
+			int iNewRank = pos.y + ((owner == 0) ? 1 : -1);
+			
 			value += 100;
+			
+			// Check if we are protecting a forward diagonal piece
+			for(int iNewFile : {pos.x + 1, pos.x - 1})
+			{
+				if(board.IsTileOwner({iNewFile, iNewRank}, owner))
+				{
+					value += 5;
+					break;
+				}
+			}
+			
 			if(board.GetNumPieces() > 8)
 			{
 				value += m_pawnMoveTable[rank][pos.x - 1];
@@ -121,6 +135,7 @@ int ChessHeuristic::GetMaterialValue(const Board& board, const ivec2& pos, int t
 				value += m_pawnEndGameMoveTable[rank][pos.x - 1];
 			}
 			break;
+		}
 		case 'N':
 			value += 320;
 			value += m_knightMoveTable[rank][pos.x - 1];

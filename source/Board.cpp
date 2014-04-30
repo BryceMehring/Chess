@@ -335,9 +335,10 @@ BoardPiece* Board::GetPiece(const ivec2 &pos)
 
 const BoardPiece* Board::GetPiece(const ivec2& pos) const
 {
-	assert(IsOnBoard(pos));
+	if(!IsOnBoard(pos))
+		return nullptr;
+		
 	int id = m_board[pos.x - 1][pos.y - 1];
-	
 	return GetPiece(id);
 }
 
@@ -364,19 +365,22 @@ bool Board::IsOnBoard(const ivec2& pos) const
 
 bool Board::IsTileEmpty(const ivec2& pos) const
 {
-	assert(IsOnBoard(pos));
+	if(!IsOnBoard(pos))
+		return false;
 
 	return m_board[pos.x - 1][pos.y - 1] == 0;
 }
 
 bool Board::IsTileOwner(const ivec2& pos, int playerID) const
 {
-	assert(IsOnBoard(pos));
+	if(!IsOnBoard(pos))
+		return false;
 
 	if(IsTileEmpty(pos))
 		return false;
 
 	const BoardPiece* pPiece = GetPiece(pos);
+	assert(pPiece != nullptr);
 	return pPiece->owner == playerID;
 }
 
