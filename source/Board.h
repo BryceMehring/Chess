@@ -43,6 +43,7 @@ private:
 	int m_newIndex;
 	int m_hasMoved;
 	int m_oldTurnsToStalemate;
+	int m_type;
 	BoardMove m_LastMove;
 	ivec2 m_oldKingPos;
 };

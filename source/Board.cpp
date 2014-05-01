@@ -71,6 +71,7 @@ ApplyMove::ApplyMove(const BoardMove& move, Board* pBoard) : m_move(move), m_pBo
 	// Promotion logic
 	else if(m_move.specialMove == SpecialMove::Promotion)
 	{
+		m_type = pFrom->type;
 		pFrom->type = m_move.promotion;
 		
 		// Update the number of knights and bishops upon promotion
@@ -106,7 +107,7 @@ ApplyMove::~ApplyMove()
 	// Promotion logic
 	else if(m_move.specialMove == SpecialMove::Promotion)
 	{
-		pFrom->type = pFrom->piece.type();
+		pFrom->type = m_type;
 		
 		// Update the number of knights and bishops upon promotion
 		if(m_move.promotion == 'N')
