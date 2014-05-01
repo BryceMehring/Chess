@@ -80,8 +80,6 @@ private:
 
   HISTORY_ARRAY_TYPE m_history;
 
-  Timer m_minimaxTimer;
-
   std::default_random_engine m_randEngine;
 };
 

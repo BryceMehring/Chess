@@ -183,10 +183,10 @@ bool AI::MiniMax(int playerID, bool bCutDepth, BoardMove& moveOut)
 	bool bEnableCutoff = false;
 	bool bFoundMove = false;
 
-	m_minimaxTimer.Reset();
-	m_minimaxTimer.Start();
-
 	m_bInCheckmate = false;
+	
+	Timer minimaxTimer;
+	minimaxTimer.Start();
 	
 	ClearHistory();
 
@@ -197,7 +197,7 @@ bool AI::MiniMax(int playerID, bool bCutDepth, BoardMove& moveOut)
 		if(bFoundAtDepth)
 		{
 #ifdef DEBUG_OUTPUT
-			cout << "Depth " << d << " time: " << m_minimaxTimer.GetTime() << endl;
+			cout << "Depth " << d << " time: " << minimaxTimer.GetTime() << endl;
 #endif
 			bEnableCutoff = true;
 			bFoundMove = true;
@@ -331,7 +331,7 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int alpha, int beta
 			}
 		}
 
-		// Apply the move in the queue with the higest priority
+		// Apply the move in the queue with the highest priority
 		ApplyMove theMove(currentMove, &m_board);
 		int score = MiniMax(depth - 1, playerID, !playerIDToMove, alpha, beta, bEnableCutoff);
 
@@ -391,7 +391,7 @@ AI::FRONTIER_TYPE AI::MoveOrdering(int playerIDToMove)
 
 std::uint64_t AI::GetTimePerMove()
 {
-	std::uint64_t time = (std::uint64_t)players[playerID()].time() / 45 * 1000000000;
+	std::uint64_t time = (std::uint64_t)players[playerID()].time() / 50 * 1000000000;
 
 	// If the game is almost going to time out,
 	// do not search as deep
