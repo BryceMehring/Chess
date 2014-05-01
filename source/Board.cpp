@@ -739,7 +739,7 @@ bool Board::IsNotEnoughPiecesStalemate() const
 	// king against king
 	if((m_piecesCount[0] == 1) && (m_piecesCount[1] == 1))
 	{
-		cout << "Stalemate: king against king" << endl;
+		//cout << "Stalemate: king against king" << endl;
 		return true;
 	}
 
@@ -748,7 +748,7 @@ bool Board::IsNotEnoughPiecesStalemate() const
 	if(((m_knightCounter[0] == 1) ^ (m_bishopCounter[0] == 1)) ||
 	   ((m_knightCounter[1] == 1) ^ (m_bishopCounter[1] == 1)))
 	{
-		cout << "Stalemate: king against king and (bishop or knight)" << endl;
+		//cout << "Stalemate: king against king and (bishop or knight)" << endl;
 		return true;
 	}
 
@@ -757,7 +757,7 @@ bool Board::IsNotEnoughPiecesStalemate() const
 	{
 		if(((m_bishopPos[0].x + m_bishopPos[0].y) % 2) == ((m_bishopPos[1].x + m_bishopPos[1].y) % 2))
 		{
-			cout << "Stalemate: king and bishop against king and bishop, with both bishops on squares of the same color" << endl;
+			//cout << "Stalemate: king and bishop against king and bishop, with both bishops on squares of the same color" << endl;
 			return true;
 		}
 	}
