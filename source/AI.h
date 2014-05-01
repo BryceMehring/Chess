@@ -45,7 +45,7 @@ public:
 
 private:
 
-  void WaitForFuture(const std::future<void>& fut);
+  void WaitForFuture(const std::future<void>& fut, bool bPondering = false);
 
   // Finds the best move from minimax with alpha beta pruning, Quiescence Search, and History Table
   bool MiniMax(int playerID, bool bCutTime, BoardMove& moveOut);

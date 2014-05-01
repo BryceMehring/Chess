@@ -69,7 +69,7 @@ bool AI::run()
 			m_bStopMinimax = true;
 		}
 		
-		WaitForFuture(m_ponderingFuture);
+		WaitForFuture(m_ponderingFuture, true);
 		
 		m_bFoundOpponentMove = false;
 	}
@@ -159,10 +159,16 @@ void AI::end()
 	m_bStopMinimax = true;
 }
 
-void AI::WaitForFuture(const std::future<void>& fut)
+void AI::WaitForFuture(const std::future<void>& fut, bool bPondering)
 {
+	std::uint64_t timePerMove = GetTimePerMove();
+	if(bPondering)
+	{
+		timePerMove /= 2;
+	}
+
 	// note: this is a hack as wait_for does not return a boolean in the standard.
-	if(fut.wait_for(std::chrono::nanoseconds(GetTimePerMove())) == false)
+	if(fut.wait_for(std::chrono::nanoseconds(timePerMove)) == false)
 	{
 		m_bStopMinimax = true;
 		fut.wait();
