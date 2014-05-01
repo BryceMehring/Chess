@@ -47,28 +47,32 @@ bool AI::run()
 	
 	// Check to see whether or not the last move that was made matched the predicted move from minimax
 	// Todo: need to use mutexes so that only one thread can access this data
-	if(!moves.empty())
+	if(!moves.empty() && m_ponderingFuture.valid())
 	{
 		const Move& lastMove = moves[0];
 		
-		std::lock_guard<std::mutex> opponentMoveLck(m_bestMoveMutex);
+		m_bestMoveMutex.lock();
+		bool bFoundValidPonderMove = (m_bFoundOpponentMove && (m_opponentBestMove.from == ivec2{lastMove.fromFile(), lastMove.fromRank()}) && 
+									 (m_opponentBestMove.to == ivec2{lastMove.toFile(), lastMove.toRank()}));
+		m_bestMoveMutex.unlock();
 		
-		if(m_bFoundOpponentMove && (m_opponentBestMove.from == ivec2{lastMove.fromFile(), lastMove.fromRank()}) && 
-		   (m_opponentBestMove.to == ivec2{lastMove.toFile(), lastMove.toRank()}))
+		if(bFoundValidPonderMove)
 		{
 			// The ponder thread can finish executing
+			cout << "Ponder Hit" << endl;
 			bRestartMinimax = false;
 		}
 		else
 		{
 			// Signal the thread to finish
+			cout << "Ponder miss" << endl;
 			m_bStopMinimax = true;
 		}
 		
+		WaitForFuture(m_ponderingFuture);
+		
 		m_bFoundOpponentMove = false;
 	}
-		
-	std::lock_guard<std::mutex> lck(m_mutex);
 	
 	cout << "Waiting Time: " << waitTimer.GetTime() << endl;
 
@@ -85,8 +89,16 @@ bool AI::run()
 
 	if(bRestartMinimax)
 	{
-		// Find the best move using Minimax
-		MiniMax(playerID(), false, false, m_bestMove);
+		m_bStopMinimax = false;
+		auto minimaxFuture = std::async(std::launch::async, [this]()
+		{
+			cout << "Normal" << endl;
+			
+			// Find the best move using Minimax
+			MiniMax(playerID(), false, m_bestMove);
+		});
+		
+		WaitForFuture(minimaxFuture);
 	}
 
 	// Get the piece to move and move the piece
@@ -101,14 +113,16 @@ bool AI::run()
 	m_count++;
 #endif
 
-	auto ponderFunction = [this]()
+	m_bStopMinimax = false;
+	m_ponderingFuture = std::async(std::launch::async, [this]()
 	{
-		std::lock_guard<std::mutex> lck(m_mutex);
-	
+#ifdef DEBUG_OUTPUT
+		cout << "Pondering" << endl;
+#endif
+		
 		BoardMove predictedOpponentMove;
-
 		ApplyMove theirMove(m_bestMove, &m_board);
-		if(MiniMax(!playerID(), true, true, predictedOpponentMove))
+		if(MiniMax(!playerID(), true, predictedOpponentMove))
 		{
 			if(!m_bStopMinimax)
 			{
@@ -120,15 +134,21 @@ bool AI::run()
 				// If their last move is the same as the move I have found
 				// Then continue to search
 				// Else signal the thread to exit
+#ifdef DEBUG_OUTPUT
+				cout << endl;
+#endif
 				
+				BoardMove myBestMove;
 				ApplyMove myMove(predictedOpponentMove, &m_board);
-				MiniMax(playerID(), true, false, m_bestMove);
+				if(MiniMax(playerID(), false, myBestMove))
+				{
+					cout << "Found ponder move" << endl;
+					m_bestMove = myBestMove;
+				}
 			}
 		}
-	};
-	
-	m_bStopMinimax = false;
-	m_ponderingFuture = std::async(std::launch::async, ponderFunction);
+		
+	});
 
 	return true;
 }
@@ -137,14 +157,25 @@ bool AI::run()
 void AI::end()
 {
 	m_bStopMinimax = true;
-	std::lock_guard<std::mutex> lck(m_mutex);
 }
 
-bool AI::MiniMax(int playerID, bool bPonder, bool bCutDepth, BoardMove& moveOut)
+void AI::WaitForFuture(const std::future<void>& fut)
+{
+	// note: this is a hack as wait_for does not return a boolean in the standard.
+	if(fut.wait_for(std::chrono::nanoseconds(GetTimePerMove())) == false)
+	{
+		m_bStopMinimax = true;
+		fut.wait();
+		m_bStopMinimax = false;
+	}
+}
+
+bool AI::MiniMax(int playerID, bool bCutDepth, BoardMove& moveOut)
 {
 	unsigned int d = 1;
 	unsigned int depthLimit = (bCutDepth ? 3 : m_depth);
-	bool bEnableTimer = false;
+	bool bEnableCutoff = false;
+	bool bFoundMove = false;
 
 	m_minimaxTimer.Reset();
 	m_minimaxTimer.Start();
@@ -152,38 +183,26 @@ bool AI::MiniMax(int playerID, bool bPonder, bool bCutDepth, BoardMove& moveOut)
 	m_bInCheckmate = false;
 	
 	ClearHistory();
-	
-	cout << "Minimax in " << (bPonder ? "Pondering" : "Normal") << endl;
-	
-	bool bFoundMove = true;
 
 	while((d <= depthLimit) && (!m_bInCheckmate || (d != 2)))
 	{
-		if(bEnableTimer && (m_minimaxTimer.GetTime() >= GetTimePerMove()))
-		{
-			break;
-		}
-
-		bool bFoundAtDepth = MiniMax(d, playerID, bPonder, bEnableTimer, moveOut);
+		bool bFoundAtDepth = MiniMax(d, playerID, moveOut, bEnableCutoff);
 		
 		if(bFoundAtDepth)
 		{
 #ifdef DEBUG_OUTPUT
 			cout << "Depth " << d << " time: " << m_minimaxTimer.GetTime() << endl;
 #endif
-			bEnableTimer = true;
+			bEnableCutoff = true;
+			bFoundMove = true;
 		}
 		else
 		{
 #ifdef DEBUG_OUTPUT
 			cout << "No move was found at depth " << d << endl;
-			bFoundMove = false;
 #endif
 			break;
 		}
-		
-		if(bPonder && m_bStopMinimax)
-			break;
 
 		++d;
 	}
@@ -191,7 +210,7 @@ bool AI::MiniMax(int playerID, bool bPonder, bool bCutDepth, BoardMove& moveOut)
 	return bFoundMove;
 }
 
-bool AI::MiniMax(int depth, int playerID, bool bPonder, bool bEnableTimer, BoardMove& moveOut)
+bool AI::MiniMax(int depth, int playerID, BoardMove& moveOut, bool bEnableCutoff)
 {
 	bool bFoundMove = false;
 	BoardMove bestMove;
@@ -204,9 +223,14 @@ bool AI::MiniMax(int depth, int playerID, bool bPonder, bool bEnableTimer, Board
 
 	for(const BoardMove& currentMove : frontier)
 	{
+		if(bEnableCutoff && m_bStopMinimax)
+		{
+			bFoundMove = false;
+			break;
+		}
+	
 		ApplyMove theMove(currentMove, &m_board);
-
-		int val = MiniMax(depth - 1, playerID, !playerID, alpha, beta, bPonder, bEnableTimer);
+		int val = MiniMax(depth - 1, playerID, !playerID, alpha, beta, bEnableCutoff);
 
 		// If the new move is better than the last
 		if(val > alpha)
@@ -219,22 +243,6 @@ bool AI::MiniMax(int depth, int playerID, bool bPonder, bool bEnableTimer, Board
 			cout << val << endl;
 #endif
 		}
-
-		if(bEnableTimer)
-		{
-			// If we have ran out of time
-			if((m_minimaxTimer.GetTime()) >= GetTimePerMove())
-			{
-				bFoundMove = false;
-				break;
-			}
-		}
-		
-		if(bPonder && m_bStopMinimax)
-		{
-			bFoundMove = false;
-			break;
-		}
 	}
 
 	if(bFoundMove)
@@ -246,39 +254,10 @@ bool AI::MiniMax(int depth, int playerID, bool bPonder, bool bEnableTimer, Board
 	return bFoundMove;
 }
 
-int AI::MiniMax(int depth, int playerID, int playerIDToMove, int alpha, int beta, bool bPonder, bool bEnableTimer)
+int AI::MiniMax(int depth, int playerID, int playerIDToMove, int alpha, int beta, bool bEnableCutoff)
 {
-	if(bPonder && m_bStopMinimax)
+	if(bEnableCutoff && m_bStopMinimax)
 		return 0;
-	
-#ifdef STRICT_DEADLINE
-	if(bEnableTimer)
-	{
-		// If we have ran out of time
-		if((m_minimaxTimer.GetTime()) >= GetTimePerMove())
-			return 0;
-	}
-#endif
-
-	/*int alphaOrig = alpha;
-
-	auto iter = this->m_transpositionTable.find(m_board.GetState());
-	if(iter != m_transpositionTable.end())
-	{
-		const TranspositionTableEntry& ttEntry = iter->second;
-		if(ttEntry.depth >= depth)
-		{
-			if(ttEntry.flag == TranspositionTableFlag::EXACT)
-				return ttEntry.value;
-			if(ttEntry.flag == TranspositionTableFlag::LOWERBOUND)
-				alpha = std::max(alpha, ttEntry.value);
-			else if(ttEntry.flag == TranspositionTableFlag::UPPERBOUND)
-				beta = std::min(beta, ttEntry.value);
-
-			if(alpha >= beta)
-				return ttEntry.value;
-		}
-	}*/
 
 	// If a checkmate has been found, return a large number
 	if(m_board.IsInCheckmate(!playerID))
@@ -348,7 +327,7 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int alpha, int beta
 
 		// Apply the move in the queue with the higest priority
 		ApplyMove theMove(currentMove, &m_board);
-		int score = MiniMax(depth - 1, playerID, !playerIDToMove, alpha, beta, bPonder, bEnableTimer);
+		int score = MiniMax(depth - 1, playerID, !playerIDToMove, alpha, beta, bEnableCutoff);
 
 		if(playerID == playerIDToMove)
 		{
@@ -386,35 +365,6 @@ int AI::MiniMax(int depth, int playerID, int playerIDToMove, int alpha, int beta
 	{
 		m_history[playerIDToMove][GetHistoryTableIndex(bestMove.from)][GetHistoryTableIndex(bestMove.to)] += (depth * depth) + 1;
 	}
-
-	/*TranspositionTableEntry ttEntry;
-	ttEntry.value = (playerID == playerIDToMove) ? alpha : beta;
-
-	if(ttEntry.value <= alphaOrig)
-	{
-		ttEntry.flag = TranspositionTableFlag::UPPERBOUND;
-	}
-	else if(ttEntry.value >= beta)
-	{
-		ttEntry.flag = TranspositionTableFlag::LOWERBOUND;
-	}
-	else
-	{
-		ttEntry.flag = TranspositionTableFlag::EXACT;
-	}
-	ttEntry.depth = depth;
-
-	if(iter != m_transpositionTable.end())
-	{
-		if(ttEntry.depth > iter->second.depth)
-		{
-			iter->second = ttEntry;
-		}
-	}
-	else
-	{
-		m_transpositionTable[m_board.GetState()] = ttEntry;
-	}*/
 		
 	return (playerID == playerIDToMove) ? alpha : beta;
 }
