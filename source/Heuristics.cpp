@@ -1,6 +1,8 @@
 #include "Heuristics.h"
 #include <cassert>
 
+// Derived from: http://chessprogramming.wikispaces.com/Simplified+evaluation+function
+
 const int ChessHeuristic::m_pawnMoveTable[8][8] =
 {
 	{0,  0,  0,  0,  0,  0,  0,  0},
