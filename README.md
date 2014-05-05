@@ -1,4 +1,4 @@
 CS347 Chess
 ===========
 
-Chess
+2014 AI Tournament - 2nd Place
