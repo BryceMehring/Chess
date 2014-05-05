@@ -12,22 +12,6 @@
 #include <mutex>
 #include <future>
 
-enum class TranspositionTableFlag
-{
-	UPPERBOUND,
-	LOWERBOUND,
-	EXACT
-};
-
-struct TranspositionTableEntry
-{
-	int value;
-	int depth;
-	TranspositionTableFlag flag;
-};
-
-class HistoryFunctor;
-
 ///The class implementing gameplay logic.
 class AI: public BaseAI
 {
@@ -45,6 +29,8 @@ public:
 
 private:
 
+  // Waits for GetTimePerMove() on the future.
+  // If bPondering is true, GetTimePerMove() is cut in half.
   void WaitForFuture(const std::future<void>& fut, bool bPondering = false);
 
   // Finds the best move from minimax with alpha beta pruning, Quiescence Search, and History Table
@@ -58,6 +44,7 @@ private:
   // Returns the amount of time that the AI has per turn
   std::uint64_t GetTimePerMove();
   
+  // Clears all entries in the history table
   void ClearHistory();
 
   // Draws the chess board to standard output

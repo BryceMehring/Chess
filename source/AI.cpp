@@ -46,7 +46,6 @@ bool AI::run()
 	waitTimer.Start();
 	
 	// Check to see whether or not the last move that was made matched the predicted move from minimax
-	// Todo: need to use mutexes so that only one thread can access this data
 	if(!moves.empty() && m_ponderingFuture.valid())
 	{
 		const Move& lastMove = moves[0];
@@ -85,6 +84,7 @@ bool AI::run()
 	DrawBoard();
 #endif
 
+	// Refill the board with updated info from the server
 	m_board.Update(TurnsToStalemate(), moves, pieces);
 
 	if(bRestartMinimax)
@@ -101,7 +101,7 @@ bool AI::run()
 		WaitForFuture(minimaxFuture);
 	}
 
-	// Get the piece to move and move the piece
+	// Get the piece to move
 	BoardPiece* pPiece = m_board.GetPiece(m_bestMove.from);
 	assert(pPiece != nullptr);
 	pPiece->piece.move(m_bestMove.to.x, m_bestMove.to.y, m_bestMove.promotion);
@@ -113,6 +113,7 @@ bool AI::run()
 	m_count++;
 #endif
 
+	// Launch pondering thread
 	m_bStopMinimax = false;
 	m_ponderingFuture = std::async(std::launch::async, [this]()
 	{
@@ -120,24 +121,24 @@ bool AI::run()
 		cout << "Pondering" << endl;
 #endif
 		
+		// First search for the best opponent predicted move at a shallow depth
 		BoardMove predictedOpponentMove;
 		ApplyMove theirMove(m_bestMove, &m_board);
 		if(MiniMax(!playerID(), true, predictedOpponentMove))
 		{
 			if(!m_bStopMinimax)
 			{
+				// Signal that a best move has been found, and save the move
 				m_bestMoveMutex.lock();
 				m_opponentBestMove = predictedOpponentMove;
 				m_bFoundOpponentMove = true;
 				m_bestMoveMutex.unlock();
 				
-				// If their last move is the same as the move I have found
-				// Then continue to search
-				// Else signal the thread to exit
 #ifdef DEBUG_OUTPUT
 				cout << endl;
 #endif
 				
+				// Search for my best move after applying the opponents best move
 				BoardMove myBestMove;
 				ApplyMove myMove(predictedOpponentMove, &m_board);
 				if(MiniMax(playerID(), false, myBestMove))
@@ -147,7 +148,6 @@ bool AI::run()
 				}
 			}
 		}
-		
 	});
 
 	return true;
@@ -167,9 +167,12 @@ void AI::WaitForFuture(const std::future<void>& fut, bool bPondering)
 		timePerMove /= 2;
 	}
 
-	// note: this is a hack as wait_for does not return a boolean in the standard.
+	// note: this is a hack for GCC 4.6(what the arena uses) as wait_for does not return a boolean in the standard.
+	// Wait until the thread finishes or it gets timed out
 	if(fut.wait_for(std::chrono::nanoseconds(timePerMove)) == false)
 	{
+		// If the thread did not finish execution, signal the thread to exit, and wait till the thread exits.
+	
 		m_bStopMinimax = true;
 		fut.wait();
 		m_bStopMinimax = false;
@@ -190,6 +193,7 @@ bool AI::MiniMax(int playerID, bool bCutDepth, BoardMove& moveOut)
 	
 	ClearHistory();
 
+	// Loop until the depth limit is reached, or a checkmate is found
 	while((d <= depthLimit) && (!m_bInCheckmate || (d != 2)))
 	{
 		bool bFoundAtDepth = MiniMax(d, playerID, moveOut, bEnableCutoff);
@@ -406,7 +410,7 @@ std::uint64_t AI::GetTimePerMove()
 
 void AI::ClearHistory()
 {
-	std::memset(m_history.data(),0,sizeof(m_history));
+	std::memset(m_history.data(), 0, sizeof(m_history));
 }
 
 void AI::DrawBoard() const

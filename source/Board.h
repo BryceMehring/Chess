@@ -91,7 +91,7 @@ public:
 	// Updates the grid
 	void Update(int turnsToStalemate, const std::vector<Move>& moves, const std::vector<Piece>& pieces);
 
-	// Returns all valid moves for the specifed player
+	// Returns all valid moves for the specified player
 	std::vector<BoardMove> GetMoves(int playerID);
 
 	// Returns the value of the game state for the player
@@ -105,6 +105,7 @@ public:
 	BoardPiece* GetPiece(int id);
 	const BoardPiece* GetPiece(int id) const;
 
+	// Returns the state of the board
 	const std::vector<std::vector<int>>& GetState() const { return m_board; }
 
 	// Returns true if pos is on the board
@@ -130,12 +131,15 @@ public:
 
 private:
 
+	// Returns all moves for the specified player
+	// If bCheck is true, all moves will be valid moves.
+	// If bCheck is false, returns all pseudo legal moves. Checking if the king is put in check after the move is not done.
 	std::vector<BoardMove> GetMoves(int playerID, bool bCheck);
 
 	// Generate valid moves for pawns
 	void GeneratePawnMoves(const BoardPiece& piece, bool bCheck, std::vector<BoardMove>& moves);
 
-	// Generates valid moves for pawns that have the possilbity of being promoted
+	// Generates valid moves for pawns that have the possibility of being promoted
 	void GeneratePromotedPawnMoves(const ivec2& from, const ivec2& to, int playerID, bool bCheck, std::vector<BoardMove>& moves);
 
 	// Generates valid moves for bishops rooks and queens

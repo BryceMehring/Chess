@@ -261,9 +261,10 @@ void Board::Update(int turnsToStalemate, const std::vector<Move>& moves, const s
 	// Fill new board with pieces
 	for(const Piece& p : pieces)
 	{
+		// Count of pieces on the board
 		m_piecesCount[p.owner()]++;
 		
-		// Cache locations and count of pieces on the board
+		// Cache locations of bishops and kings and count the number of knights and bishops
 		switch(p.type())
 		{
 			case 'N':
