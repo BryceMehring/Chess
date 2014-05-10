@@ -37,7 +37,7 @@ ApplyMove::ApplyMove(const BoardMove& move, Board* pBoard) : m_move(move), m_pBo
 	pFrom->hasMoved = 1;
 
 	// Turns left for stalemate logic
-	if(m_move.capturedType == 0 && pFrom->type != 'P')
+	if((m_move.capturedType == 0) && (pFrom->type != 'P'))
 	{
 		m_pBoard->m_turnsToStalemate--;
 	}
@@ -59,6 +59,10 @@ ApplyMove::ApplyMove(const BoardMove& move, Board* pBoard) : m_move(move), m_pBo
 		else if(m_move.capturedType == 'B')
 		{
 			m_pBoard->m_bishopCounter[!pFrom->owner]--;
+		}
+		else if(m_move.capturedType == 'Q')
+		{
+			m_pBoard->m_hasQueen[!pFrom->owner] = false;
 		}
 	}
 	
@@ -146,6 +150,10 @@ ApplyMove::~ApplyMove()
 		else if(m_move.capturedType == 'B')
 		{
 			m_pBoard->m_bishopCounter[!pFrom->owner]++;
+		}
+		else if(m_move.capturedType == 'Q')
+		{
+			m_pBoard->m_hasQueen[!pFrom->owner] = true;
 		}
 	}
 
@@ -240,7 +248,7 @@ bool BoardEqual::operator()(const std::vector<std::vector<int>>& a, const std::v
 
 const Board* BoardEqual::s_pBoard = nullptr;
 
-Board::Board() : m_turnsToStalemate(0), m_cacheHit(0), m_cacheTotal(0)
+Board::Board() : m_turnsToStalemate(0)
 {
 	BoardHash::SetBoard(this);
 	BoardEqual::SetBoard(this);
@@ -273,6 +281,9 @@ void Board::Update(int turnsToStalemate, const std::vector<Move>& moves, const s
 			case 'B':
 				m_bishopCounter[p.owner()]++;
 				m_bishopPos[p.owner()] = {p.file(), p.rank()};
+				break;
+			case 'Q':
+				m_hasQueen[p.owner()] = true;
 				break;
 			case 'K':
 				m_kingPos[p.owner()] = {p.file(), p.rank()};
@@ -399,6 +410,25 @@ bool Board::IsInStalemate(int playerID)
 unsigned int Board::GetNumPieces() const
 {
 	return (m_piecesCount[0] + m_piecesCount[1]);
+}
+
+bool Board::IsEndGame() const
+{
+	// Both sides have no queens.
+	if((m_hasQueen[0] == false) && (m_hasQueen[1] == false))
+		return true;
+		
+	// Every side which has a queen has additionally no other pieces or one minor piece maximum.
+	for(unsigned int i : {0, 1})
+	{
+		if(m_hasQueen[i] == true)
+		{
+			if(!((m_piecesCount[i] == 2) || ((m_knightCounter[i] <= 1) && (m_bishopCounter[i] <= 1) && (m_knightCounter[i] ^ m_bishopCounter[i]))))
+				return false;
+		}
+	}
+	
+	return true;	
 }
 
 std::vector<BoardMove> Board::GetMoves(int playerID, bool bCheck)
@@ -786,12 +816,11 @@ bool Board::IsThreeBoardStateStalemate() const
 
 void Board::Clear()
 {
-	m_cacheHit = m_cacheTotal = 0;
-	
 	m_piecesCount[0] = m_piecesCount[1] = 0;
 	m_knightCounter[0] = m_knightCounter[1] = 0;
 	m_bishopCounter[0] = m_bishopCounter[1] = 0;
 	m_bishopPos[0] = m_bishopPos[1] = ivec2();
+	m_hasQueen[0] = m_hasQueen[1] = false;
 
 	// Clear the board of pieces
 	for(auto& fileIter : m_board)

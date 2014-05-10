@@ -110,6 +110,7 @@ int ChessHeuristic::GetMaterialValue(const Board& board, const ivec2& pos, int t
 	int value = 0;
 	int rank = ((owner == 1) ? pos.y - 1 : 8 - pos.y);
 
+	// todo: IsEndGame() should only be executed once for each state
 	switch(type)
 	{
 		case 'P':
@@ -128,7 +129,7 @@ int ChessHeuristic::GetMaterialValue(const Board& board, const ivec2& pos, int t
 				}
 			}
 			
-			if(board.GetNumPieces() > 8)
+			if(!board.IsEndGame())
 			{
 				value += m_pawnMoveTable[rank][pos.x - 1];
 			}
@@ -155,7 +156,7 @@ int ChessHeuristic::GetMaterialValue(const Board& board, const ivec2& pos, int t
 			value += m_queenMoveTable[rank][pos.x - 1];
 			break;
 		case 'K':
-			if(board.GetNumPieces() > 8)
+			if(!board.IsEndGame())
 			{
 				value += m_kingMiddleGameTable[rank][pos.x - 1];
 			}

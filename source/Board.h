@@ -128,6 +128,8 @@ public:
 
 	// Returns the number of pieces on the board
 	unsigned int GetNumPieces() const;
+	
+	bool IsEndGame() const;
 
 private:
 
@@ -188,9 +190,7 @@ private:
 	int m_knightCounter[2];
 	int m_bishopCounter[2];
 	ivec2 m_bishopPos[2];
-
-	int m_cacheHit;
-	int m_cacheTotal;
+	bool m_hasQueen[2];
 };
 
 #endif // _BOARD_
