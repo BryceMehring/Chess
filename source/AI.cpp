@@ -167,9 +167,8 @@ void AI::WaitForFuture(const std::future<void>& fut, bool bPondering)
 		timePerMove /= 2;
 	}
 
-	// note: this is a hack for GCC 4.6(what the arena uses) as wait_for does not return a boolean in the standard.
 	// Wait until the thread finishes or it gets timed out
-	if(fut.wait_for(std::chrono::nanoseconds(timePerMove)) == false)
+	if(fut.wait_for(std::chrono::nanoseconds(timePerMove)) == std::future_status::timeout)
 	{
 		// If the thread did not finish execution, signal the thread to exit, and wait till the thread exits.
 	
