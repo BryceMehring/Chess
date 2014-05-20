@@ -21,11 +21,11 @@ ApplyMove::ApplyMove(const BoardMove& move, Board* pBoard) : m_move(move), m_pBo
 
 	m_pBoard->m_moveHistory.push_front(m_move);
 
-	m_oldIndex = m_pBoard->m_board[m_move.from.x - 1][m_move.from.y - 1];
 	m_newIndex = m_pBoard->m_board[m_move.to.x - 1][m_move.to.y - 1];
 
-	m_pBoard->m_board[m_move.from.x - 1][m_move.from.y - 1] = 0;
-	m_pBoard->m_board[m_move.to.x - 1][m_move.to.y - 1] = m_oldIndex;
+	m_pBoard->m_board[m_move.to.x - 1][m_move.to.y - 1] = 0;
+	std::swap(m_pBoard->m_board[m_move.from.x - 1][m_move.from.y - 1],
+			  m_pBoard->m_board[m_move.to.x - 1][m_move.to.y - 1]);
 
 	m_LastMove = m_pBoard->m_LastMove;
 	m_pBoard->m_LastMove = m_move;
@@ -157,7 +157,9 @@ ApplyMove::~ApplyMove()
 		}
 	}
 
-	m_pBoard->m_board[m_move.from.x - 1][m_move.from.y - 1] = m_oldIndex;
+	std::swap(m_pBoard->m_board[m_move.from.x - 1][m_move.from.y - 1],
+			  m_pBoard->m_board[m_move.to.x - 1][m_move.to.y - 1]);
+
 	m_pBoard->m_board[m_move.to.x - 1][m_move.to.y - 1] = m_newIndex;
 
 	m_pBoard->m_LastMove = m_LastMove;
@@ -543,9 +545,10 @@ void Board::GeneratePromotedPawnMoves(const ivec2& from, const ivec2& to, int pl
 	int capturedType = GetPieceType(to);
 	if((to.y == 1 && playerID == 1) || (to.y == 8 && playerID == 0))
 	{
+		bool bValidMove = bCheck;
 		for(int promotion : {'Q', 'B', 'N', 'R'})
 		{
-			AddMove({from, to, capturedType, promotion, SpecialMove::Promotion}, bCheck, moves);
+			bValidMove = !AddMove({from, to, capturedType, promotion, SpecialMove::Promotion}, bValidMove, moves);
 		}
 	}
 	else
@@ -721,16 +724,17 @@ int Board::GetPieceType(const ivec2& pos) const
 	return ((pTo != nullptr) ? pTo->type : 0);
 }
 
-void Board::AddMove(const BoardMove& move, bool bCheck, std::vector<BoardMove>& moves)
+bool Board::AddMove(const BoardMove& move, bool bCheck, std::vector<BoardMove>& moves)
 {
+	bool bValidMove = true;
+
 	if(bCheck)
 	{
 		BoardPiece* pFrom = GetPiece(move.from);
 		assert(pFrom != nullptr);
 
 		ApplyMove triedMove(move, this);
-
-		if(!IsInCheck(pFrom->owner))
+		if((bValidMove = !IsInCheck(pFrom->owner)))
 		{
 			moves.push_back(move);
 		}
@@ -739,6 +743,8 @@ void Board::AddMove(const BoardMove& move, bool bCheck, std::vector<BoardMove>& 
 	{
 		moves.push_back(move);
 	}
+
+	return bValidMove;
 }
 
 bool Board::IsInCheck(int playerID)

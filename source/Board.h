@@ -39,7 +39,6 @@ private:
 	BoardMove m_move;
 	Board* m_pBoard;
 
-	int m_oldIndex;
 	int m_newIndex;
 	int m_hasMoved;
 	int m_oldTurnsToStalemate;
@@ -158,7 +157,8 @@ private:
 	int GetPieceType(const ivec2& pos) const;
 
 	// Adds a move to the move list only if after applying the move, it does not put us in check, or if bCheck is false
-	void AddMove(const BoardMove& move, bool bCheck, std::vector<BoardMove>& moves);
+	// Returns true if move is valid or bCheck is false, false otherwise
+	bool AddMove(const BoardMove& move, bool bCheck, std::vector<BoardMove>& moves);
 
 	// Returns true if playerID is in check
 	bool IsInCheck(int playerID);
