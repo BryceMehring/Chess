@@ -646,11 +646,10 @@ void Board::GenerateCastleMove(const BoardPiece& piece, bool bCheck, std::vector
 
 	if(!piece.hasMoved && !IsInCheck(piece.owner))
 	{
-		BoardPiece* rooks[2] = {GetPiece({1,piece.rank}), GetPiece({8,piece.rank})};
-		int dir[2] = {-1, 1};
+		const BoardPiece* rooks[2] = {GetPiece({1,piece.rank}), GetPiece({8,piece.rank})};
+		const int dir[2] = {-1, 1};
 
-		// Generate moves for the other team
-		std::vector<BoardMove> enemyMoves = GetMoves(!piece.owner, false);
+		std::vector<BoardMove> enemyMoves;
 
 		for(unsigned int i = 0; i < 2; ++i)
 		{
@@ -669,6 +668,12 @@ void Board::GenerateCastleMove(const BoardPiece& piece, bool bCheck, std::vector
 
 					if(bValidState && (pos.x == 4 || pos.x == 6))
 					{
+						// Generate moves for the other team
+						if(enemyMoves.empty())
+						{
+							 enemyMoves = GetMoves(!piece.owner, false);
+						}
+
 						for(auto iter = enemyMoves.begin(); bValidState && (iter != enemyMoves.end()); ++iter)
 						{
 							bValidState &= (iter->to != pos);
