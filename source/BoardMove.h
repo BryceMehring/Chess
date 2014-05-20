@@ -12,8 +12,6 @@ enum class SpecialMove
 	None
 };
 
-class BoardPiece;
-
 struct BoardMove
 {
 	BoardMove() : capturedType(0), promotion('Q'), specialMove(SpecialMove::None)
