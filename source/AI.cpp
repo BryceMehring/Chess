@@ -389,7 +389,7 @@ AI::FRONTIER_TYPE AI::MoveOrdering(int playerIDToMove)
 			   (m_history[playerIDToMove][GetHistoryTableIndex(b.from)][GetHistoryTableIndex(b.to)]);
 	});
 
-	return std::move(moves);
+	return moves;
 }
 
 std::uint64_t AI::GetTimePerMove()

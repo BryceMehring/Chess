@@ -470,7 +470,7 @@ std::vector<BoardMove> Board::GetMoves(int playerID, bool bCheck)
 		}
 	}
 
-	return std::move(moves);
+	return moves;
 }
 
 void Board::GeneratePawnMoves(const BoardPiece& piece, bool bCheck, std::vector<BoardMove>& moves)
